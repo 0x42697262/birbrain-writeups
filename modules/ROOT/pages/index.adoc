@@ -8,7 +8,7 @@ Currently, I am playing:
 . xref:HackTheBox:index.adoc[HackTheBox]
 . xref:PicoCTF:_index.adoc[PicoCTF]
 . xref:TryHackMe:_index.adoc[TryHackMe]
-. xref:Root-Me:_index.adoc[Root-Me]
+. xref:Root-Me:index.adoc[Root-Me]
 
 == Writeup Format
 

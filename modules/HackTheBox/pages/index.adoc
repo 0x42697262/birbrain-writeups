@@ -2,5 +2,7 @@
 
 Website: https://app.hackthebox.com[]
 
-I only play free boxes, active and retired ones that are free.
+I only play free boxes, active and retired.
+
+This is actually harder than I anticipated.
 

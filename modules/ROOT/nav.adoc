@@ -6,3 +6,9 @@
 ** Challenges
 *** Hardware
 **** xref:HackTheBox:photon_lockdown.adoc[]
+
+[Root-Me]
+* xref:Root-Me:index.adoc[]
+** Challenges
+*** Network
+**** xref:Root-Me:ftp_authentication.adoc[]

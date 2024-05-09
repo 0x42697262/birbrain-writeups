@@ -1,0 +1,43 @@
+= Root-Me
+
+Website: https://www.root-me.org[]
+
+A French website that has over 500 challenges for me to learn.
+
+.Challenge Count
+|===
+|Challenge |Count
+
+|App - Script
+|32+
+
+|App - System
+|89+
+
+|Cracking
+|66+
+
+|Cryptanalysis
+|69+
+
+|Forensic
+|42+
+
+|Network
+|27+
+
+|Programming
+|25+
+
+|Realist
+|59+
+
+|Steganography
+|23+
+
+|Web - Client
+|41+
+
+|Web - Server
+|92+
+|===

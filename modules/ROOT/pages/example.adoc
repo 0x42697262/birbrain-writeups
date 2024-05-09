@@ -7,7 +7,12 @@ Play Date:: 2024/04/11 - 2024/04/29
 
 == Introduction
 
+.Challenge Description
+****
 Your goal is to bird.
+****
+
+Or something.
 
 == Methodology
 
@@ -29,6 +34,12 @@ I see a bird.
 
 I caught it.
 Very hard.
+
+[TIP] 
+.Flag
+==== 
+BIRDS
+====
 
 == Acknowledgegments / References
 

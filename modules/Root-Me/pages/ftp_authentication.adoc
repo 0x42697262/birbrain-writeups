@@ -1,0 +1,83 @@
+= FTP - authentication
+
+Author:: 0x42697262
+Category:: Network
+Difficulty:: Very Easy
+Play Date:: 2023/11/23 - 2023/11/23
+
+== Introduction
+
+.Challenge Description
+****
+An authenticated file exchange achieved through FTP. Recover the password used by the user.
+****
+
+A packet capture file of FTP packets is provided.
+
+== Methodology
+
+== Reconnaissance
+
+Check the file type.
+
+----
+$ file ch1.pcap
+ch1.pcap: Unicode text, UTF-16, little-endian text, with CRLF line terminators
+----
+
+Everything is just a bunch of string... of packets.
+
+Use ``Wireshark`` for this.
+
+== Acquiring The Password
+
+FTP by itself is insecure because it's not encrypted.
+
+=== Using Wireshark
+
+The password can easily be taken by scrolling and manually inspecting each packets for the FTP password.
+
+On packet #11, the password is present.
+
+Instead of manually scrolling for the password, a better approach is to use ``TShark``.
+
+Or simply use the search bar: ``ftp.request.command == PASS``.
+
+=== Using TShark
+
+This can easily be accomplished by doing either of these commands:
+
+. ``tshark -r ch1.pcap -Y 'ftp.request.command == "PASS"'``
+. ``tshark -r ch1.pcap | grep 'Request: PASS'``
+
+----
+11   7.639420 10.20.144.150 → 10.20.144.151 FTP 81 Request: PASS cdts3500
+----
+
+The `-Y` flag sets the display filter of Wireshark.
+
+
+== Challenge Summaries
+
+Execute ``tshark -r ch1.pcap -Y 'ftp.request.command == "PASS"'`` to grab the password.
+
+== Lessons Learned
+
+. Packet capture analysis (basic)
+. Wireshark
+. TShark
+. FTP is unencrypted communication
+. When sending a password, FTP uses ``Request: PASS``
+
+== Conclusion
+
+That was very simple yet I did not have enough knowledge on how to use Wireshark or TShark best features.
+If it were not for these tools, I would've manually scanned each packets.
+
+So, use Wireshark when it's a packet file, okay?
+
+[TIP] 
+.Flag
+==== 
+cdts3500
+====
