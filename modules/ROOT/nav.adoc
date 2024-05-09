@@ -1,0 +1,7 @@
+[ROOT]
+* xref:_index.adoc[]
+
+[HackTheBox]
+* xref:HackTheBox:_index.adoc[]
+..Challenges
+*** xref:HackTheBox:photon_lockdown.adoc[]

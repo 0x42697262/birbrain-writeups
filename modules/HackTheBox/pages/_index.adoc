@@ -1,0 +1,6 @@
+= HackTheBox
+
+Website: https://app.hackthebox.com[]
+
+I only play free boxes, active and retired ones that are free.
+
