@@ -1,7 +1,8 @@
 [ROOT]
-* xref:_index.adoc[]
+* xref:index.adoc[]
 
 [HackTheBox]
-* xref:HackTheBox:_index.adoc[]
-..Challenges
-*** xref:HackTheBox:photon_lockdown.adoc[]
+* xref:HackTheBox:index.adoc[]
+** Challenges
+*** Hardware
+**** xref:HackTheBox:photon_lockdown.adoc[]

@@ -1,1 +1,245 @@
 = Photon Lockdown
+
+Author:: 0x42697262
+Category:: Hardware
+Difficulty:: Very Easy
+Play Date:: 2024/05/09 - 2024/05/09
+
+== Introduction
+
+.Challenge Description
+====
+
+We've located the adversary's location and must now secure access to their Optical Network Terminal to disable their internet connection.
+Fortunately, we've obtained a copy of the device's firmware, which is suspected to contain hardcoded credentials.
+Can you extract the password from it?
+
+====
+
+
+The challenge contains 3 files.
+
+----
+$ ls
+.rw-r--r-- birb users   6 B  Wed Oct 11 19:39:44 2023  fwu_ver
+.rw-r--r-- birb users   3 B  Wed Oct 11 19:39:49 2023  hw_ver
+.rw-r--r-- birb users  10 MB Sun Oct  1 16:02:43 2023  rootfs
+----
+
+What to expect?
+
+. The password is not encrypted or encoded in any format
+. The password is hardcoded somewhere in the configuration file
+. There are a lot of files.
+
+This should be enough as an overview for this challenge.
+
+== Methodology
+
+=== Reconnaissance
+
+The files ``fwu_ver`` and ``hw_ver`` have small file size so its output can be printed.
+
+----
+$ cat fwu_ver
+3.0.5
+----
+
+and
+
+----
+$ cat hw_ver
+X1
+----
+
+`rootfs` is quite huge to print on the standard console.
+To get an overview of its filetype, we can use ``file`` command.
+
+
+----
+$ file rootfs 
+rootfs: Squashfs filesystem, little endian, version 4.0, zlib compressed, 10936182 bytes, 910 inodes, blocksize: 131072 bytes, created: Sun Oct  1 07:02:43 2023
+----
+
+``SquashFS`` is a _compressed read-only filesystem for Linux. It uses zlib, lz4, lzo, or xz compression to compress files, inodes and directories._
+
+``rootfs`` can be extracted using an archive tool such as ``p7zip``.
+But, there's a better tool for it called ``unsquashfs``.
+
+
+----
+# unsquashfs rootfs <.>
+Parallel unsquashfs: Using 12 processors
+865 inodes (620 blocks) to write
+
+[===========================================================================================================================================================================================================================|] 1485/1485 100%
+
+created 440 files
+created 45 directories
+created 187 symlinks
+created 238 devices
+created 0 fifos
+created 0 sockets
+created 0 hardlinks
+----
+<.> Requires root privilege
+
+A new directory ``squashfs-root`` is created.
+
+----
+$ ls
+.rw-r--r-- birb users   6 B  Wed Oct 11 19:39:44 2023  fwu_ver
+.rw-r--r-- birb users   3 B  Wed Oct 11 19:39:49 2023  hw_ver
+.rw-r--r-- birb users  10 MB Sun Oct  1 16:02:43 2023  rootfs
+drwxrwxr-x root root  140 B  Wed Aug 10 11:53:09 2022  squashfs-root
+----
+
+Here are the contents inside `squashfs-root`.
+
+----
+$ l squashfs-root/
+.rw-rw-r-- root root     0 B  Wed Aug 10 11:53:09 2022  .lstripped
+drwxrwxr-x root root   2.8 KB Wed Aug 10 11:53:02 2022  bin
+lrwxrwxrwx root root    13 B  Wed Aug 10 11:53:03 2022  config ⇒ ./var/config/
+drwxrwxr-x root root   2.3 KB Wed Aug 10 11:50:56 2022  dev
+drwxrwxr-x root root  1014 B  Sun Oct  1 15:48:50 2023  etc <.>
+drwxrwxr-x root root    16 B  Sun Oct  1 15:51:05 2023  home
+drwxrwxr-x root root     0 B  Sun Oct  1 15:53:14 2023  image
+drwxrwxr-x root root   3.2 KB Wed Aug 10 11:53:08 2022  lib
+lrwxrwxrwx root root     8 B  Wed Aug 10 11:52:47 2022  mnt ⇒ /var/mnt
+drwxrwxr-x root root     0 B  Wed Aug 10 11:50:56 2022  overlay
+drwxrwxr-x root root     0 B  Wed Aug 10 11:50:56 2022  proc
+drwxrwxr-x root root     0 B  Wed Aug 10 11:50:56 2022  run
+lrwxrwxrwx root root     4 B  Wed Aug 10 11:52:47 2022  sbin ⇒ /bin
+drwxrwxr-x root root     0 B  Wed Aug 10 11:50:56 2022  sys
+lrwxrwxrwx root root     8 B  Wed Aug 10 11:52:47 2022  tmp ⇒ /var/tmp
+drwxrwxr-x root root    10 B  Wed Aug 10 11:50:56 2022  usr
+drwxrwxr-x root root     0 B  Wed Aug 10 11:50:56 2022  var
+----
+<.> Potential directory to find configuration files.
+
+Most of the directories are empty, they can be ignored.
+Similarly, symlinked directories can also be ignored.
+
+
+== Finding The Password
+
+There are many methods to find the password such as using ``grep`` or ``strings``, that is if you know what files to look for.
+Unfortunately, I do not.
+
+It is my first time seeing this embedded hardware firmware.
+
+=== Slow, Painful Process
+
+Iterate each files slowly and manually find the password line by line.
+
+Take a look at ``etc/``, there might be interesting configs there.
+
+----
+$ l squashfs-root/etc/
+lrwxrwxrwx root root   11 B  Wed Aug 10 11:52:47 2022  config ⇒ /var/config
+.rwxrwxr-x root root   49 KB Sun Oct  1 15:48:50 2023  config_default.xml <.>
+.rwxrwxr-x root root  185 B  Wed Aug 10 11:52:56 2022  config_default_hs.xml
+drwxrwxr-x root root   18 B  Wed Aug 10 11:51:08 2022  cups
+drwxrwxr-x root root   18 B  Wed Aug 10 11:53:05 2022  default
+.rwxrwxr-x root root   17 KB Wed Aug 10 11:52:59 2022  dhclient-script
+.rwxrwxr-x root root   18 KB Wed Aug 10 11:53:00 2022  dnsmasq.conf
+.rwxrwxr-x root root  1.1 KB Wed Aug 10 11:52:48 2022  ethertypes
+.rw-rw-r-- root root  637 B  Wed Aug 10 11:52:48 2022  fstab
+lrwxrwxrwx root root   10 B  Wed Aug 10 11:53:04 2022  group ⇒ /var/group
+.rw-rw-r-- root root  127 B  Wed Aug 10 11:53:00 2022  inetd.conf
+drwxrwxr-x root root   80 B  Wed Aug 10 11:53:06 2022  init.d
+.rwxrwxr-x root root  1.1 KB Wed Aug 10 11:53:03 2022  inittab
+.rwxrwxr-x root root  1.2 KB Tue Aug  9 15:55:35 2022  insdrv.sh
+.rwxrwxr-x root root  112 B  Wed Aug 10 11:53:02 2022  irf
+.rwxrwxr-x root root  108 B  Wed Aug 10 11:52:48 2022  mdev.conf
+drwxrwxr-x root root  134 B  Wed Aug 10 11:52:47 2022  modules-load.d
+.rwxrwxr-x root root  353 B  Wed Aug 10 11:53:01 2022  multiap.conf
+.rwxrwxr-x root root  431 B  Tue Aug  9 15:55:33 2022  omci_custom_opt.conf
+.rwxrwxr-x root root  221 B  Tue Aug  9 15:55:33 2022  omci_ignore_mib_tbl.conf
+.rwxrwxr-x root root  225 B  Tue Aug  9 15:55:33 2022  omci_ignore_mib_tbl_10g.conf
+.rwxrwxr-x root root  7.7 KB Tue Aug  9 15:55:33 2022  omci_mib.cfg
+.rwxrwxr-x root root  123 B  Wed Aug 10 11:53:02 2022  orf
+lrwxrwxrwx root root   11 B  Wed Aug 10 11:52:47 2022  passwd ⇒ /var/passwd
+lrwxrwxrwx root root    8 B  Wed Aug 10 11:52:47 2022  ppp ⇒ /var/ppp
+.rwxrwxr-x root root  1.2 KB Wed Aug 10 11:52:48 2022  profile
+.rw-rw-r-- root root  2.9 KB Wed Aug 10 11:52:48 2022  protocols
+.rw-rw-r-- root root  3.3 KB Wed Aug 10 11:53:01 2022  radvd.conf
+.rwxrwxr-x root root  2.8 KB Wed Aug 10 11:53:01 2022  ramfs.img
+.rwxrwxr-x root root  1.2 KB Wed Aug 10 11:52:49 2022  rc_boot_dsp
+.rwxrwxr-x root root   72 B  Wed Aug 10 11:52:49 2022  rc_log_dsp
+.rwxrwxr-x root root  448 B  Wed Aug 10 11:52:49 2022  rc_reset_dsp
+lrwxrwxrwx root root   16 B  Wed Aug 10 11:53:00 2022  resolv.conf ⇒ /var/resolv.conf
+.rwxrwxr-x root root  199 B  Tue Aug  9 15:56:31 2022  rtk_tr142.sh
+.rwxrwxr-x root root    0 B  Tue Aug  9 15:55:35 2022  run_customized_sdk.sh
+.rwxrwxr-x root root  1.4 KB Tue Aug  9 15:55:35 2022  runoam.sh
+.rwxrwxr-x root root  7.2 KB Tue Aug  9 15:55:33 2022  runomci.sh
+.rwxrwxr-x root root  1.5 KB Tue Aug  9 15:55:35 2022  runsdk.sh
+lrwxrwxrwx root root   10 B  Wed Aug 10 11:53:02 2022  samba ⇒ /var/samba
+drwxrwxr-x root root  574 B  Wed Aug 10 11:53:06 2022  scripts
+.rwxrwxr-x root root  8.0 KB Wed Aug 10 11:52:48 2022  services
+.rw-rw-r-- root root  474 B  Wed Aug 10 11:52:59 2022  setprmt_reject
+.rwxrwxr-x root root   17 B  Wed Aug 10 11:52:48 2022  shells
+.rwxrwxr-x root root  6.1 KB Wed Aug 10 11:53:01 2022  simplecfgservice.xml
+.rwxrwxr-x root root  1.0 KB Wed Aug 10 11:53:02 2022  smb.conf
+lrwxrwxrwx root root    7 B  Wed Aug 10 11:52:48 2022  TZ ⇒ /var/TZ
+.rw-rw-r-- root root   46 B  Wed Aug 10 11:53:06 2022  version
+.rw-rw-r-- root root  659 B  Sun Oct  1 15:42:44 2023  version_info
+.rwxrwxr-x root root  1.7 KB Wed Aug 10 11:53:02 2022  wscd.conf
+----
+<.> SPOILER ALERT: This is where you can find the password.
+
+On line 244, the password is hardcoded.
+
+[,xml]
+----
+<Value Name="SUSER_PASSWORD" Value="HTB{N0w_Y0u_C4n_L0g1n}"/>
+----
+
+=== The Shortcut
+
+This assumption works if the password is not encrypted or encoded.
+Luckily, the password is stored as plaintext.
+
+----
+strings rootfs | grep -r 'HTB'
+/nix/store/gbrv0fn9a07kmdw2rg22iybdymylw4qc-gnugrep-3.11/bin/grep: rootfs: binary file matches
+/nix/store/gbrv0fn9a07kmdw2rg22iybdymylw4qc-gnugrep-3.11/bin/grep: squashfs-root/bin/ip: binary file matches
+/nix/store/gbrv0fn9a07kmdw2rg22iybdymylw4qc-gnugrep-3.11/bin/grep: squashfs-root/bin/tc: binary file matches
+squashfs-root/etc/config_default.xml:<Value Name="SUSER_PASSWORD" Value="HTB{N0w_Y0u_C4n_L0g1n}"/>
+----
+
+== Challenge Summaries
+
+You do not need to extract the ``rootfs`` squash file system.
+Simply grab its strings and pass it through ``grep``.
+
+----
+strings rootfs | grep -r 'HTB'
+/nix/store/gbrv0fn9a07kmdw2rg22iybdymylw4qc-gnugrep-3.11/bin/grep: rootfs: binary file matches
+/nix/store/gbrv0fn9a07kmdw2rg22iybdymylw4qc-gnugrep-3.11/bin/grep: squashfs-root/bin/ip: binary file matches
+/nix/store/gbrv0fn9a07kmdw2rg22iybdymylw4qc-gnugrep-3.11/bin/grep: squashfs-root/bin/tc: binary file matches
+squashfs-root/etc/config_default.xml:<Value Name="SUSER_PASSWORD" Value="HTB{N0w_Y0u_C4n_L0g1n}"/>
+----
+
+== Lessons Learned
+
+. SquashFS
+. Read-only root file systems
+
+== Conclusion
+
+Next time, maybe just dump the strings as usual.
+I did not know that root file systems can be stored as SquashFS, that's a new knowledge to me.
+
+The challenge was very easy, it was just painful to have to go through the same file without knowing the text or string I am looking for.
+I assumed that the password was stored as a hash (MD5) that was required to be cracked.
+Turns out there was no need for that.
+
+Anyways, here's the flag.
+
+[TIP] 
+.Flag
+==== 
+HTB{N0w_Y0u_C4n_L0g1n}
+====
