@@ -76,7 +76,7 @@ If it were not for these tools, I would've manually scanned each packets.
 
 So, use Wireshark when it's a packet file, okay?
 
-[TIP] 
+[IMPORTANT] 
 .Flag
 ==== 
 cdts3500

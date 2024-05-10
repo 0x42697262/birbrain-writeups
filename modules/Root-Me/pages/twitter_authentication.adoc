@@ -1,0 +1,139 @@
+= Twitter authentication
+
+Author:: 0x42697262
+Category:: Network
+Difficulty:: Easy
+Play Date:: 2023/11/21 - 2023/11/21
+
+== Introduction
+
+.Challenge Description
+****
+A twitter authentication session has been captured, you have to retrieve the password.
+****
+
+A packet capture file of a Twitter traffic is provided.
+
+== Methodology
+
+== Reconnaissance
+
+Check the file type.
+
+----
+$ file ch3.pcap
+ch3.pcap: pcap capture file, microsecond ts (little-endian) - version 2.4 (Ethernet, capture length 65535)
+----
+
+A network packet filled with raw bytes and strings... It's time to use Wireshark!
+Or TShark... TShark does it best.
+
+== Acquiring The Password
+
+Opening the contents directly will show the `Authorization` header which contains the credentials of a Twitter account.
+
+The authorization is encoded as Base64 string.
+
+----
+Authorization: Basic dXNlcnRlc3Q6cGFzc3dvcmQ=
+----
+
+When decoded, the output is.
+
+----
+$ echo "dXNlcnRlc3Q6cGFzc3dvcmQ=" | base64 --decode
+usertest:password
+----
+
+Hence, the password is retrieved.
+
+=== Using TShark
+
+Check the frames.
+
+----
+$ tshark -r ch3.pcap
+    1   0.000000 128.222.228.85 → 128.121.146.100 HTTP 518 GET /statuses/replies.xml HTTP/1.1
+----
+
+There is only 1 frame in this packet.
+A hexdump can easily be used as an output.
+
+----
+$ tshark -r ch3.pcap -x
+Frame (518 bytes):
+0000  00 d0 bc eb e0 80 00 1b 63 94 b1 0e 08 00 45 00   ........c.....E.
+0010  01 f8 be d2 40 00 40 06 02 1c 80 de e4 55 80 79   ....@.@......U.y
+0020  92 64 da 40 00 50 b9 78 cf d8 6a bd a3 d3 80 18   .d.@.P.x..j.....
+0030  81 40 af 1a 00 00 01 01 08 0a 25 62 14 67 00 0b   .@........%b.g..
+0040  5a 15 47 45 54 20 2f 73 74 61 74 75 73 65 73 2f   Z.GET /statuses/
+0050  72 65 70 6c 69 65 73 2e 78 6d 6c 20 48 54 54 50   replies.xml HTTP
+0060  2f 31 2e 31 0d 0a 55 73 65 72 2d 41 67 65 6e 74   /1.1..User-Agent
+0070  3a 20 43 46 4e 65 74 77 6f 72 6b 2f 33 33 30 0d   : CFNetwork/330.
+0080  0a 43 6f 6f 6b 69 65 3a 20 5f 74 77 69 74 74 65   .Cookie: _twitte
+0090  72 5f 73 65 73 73 3d 42 41 68 37 43 44 6f 4a 64   r_sess=BAh7CDoJd
+00a0  58 4e 6c 63 6a 41 36 42 32 6c 6b 49 69 56 6d 5a   XNlcjA6B2lkIiVmZ
+00b0  47 51 32 4f 44 63 35 4d 54 4d 77 4d 57 46 68 4f   GQ2ODc5MTMwMWFhO
+00c0  54 46 69 4d 57 45 78 5a 44 56 69 5a 6d 51 77 4d   TFiMWExZDViZmQwM
+00d0  47 45 7a 25 32 35 30 41 4f 57 4e 6b 4d 79 49 4b   GEz%250AOWNkMyIK
+00e0  5a 6d 78 68 63 32 68 4a 51 7a 6f 6e 51 57 4e 30   Zmxhc2hJQzonQWN0
+00f0  61 57 39 75 51 32 39 75 64 48 4a 76 62 47 78 6c   aW9uQ29udHJvbGxl
+0100  63 6a 6f 36 52 6d 78 68 63 32 67 36 4f 6b 5a 73   cjo6Rmxhc2g6OkZs
+0110  59 58 4e 6f 25 32 35 30 41 53 47 46 7a 61 48 73   YXNo%250ASGFzaHs
+0120  41 42 6a 6f 4b 51 48 56 7a 5a 57 52 37 41 41 25   ABjoKQHVzZWR7AA%
+0130  32 35 33 44 25 32 35 33 44 2d 2d 65 61 31 32 65   253D%253D--ea12e
+0140  37 62 63 30 39 30 64 30 35 32 30 32 63 64 37 65   7bc090d05202cd7e
+0150  33 66 39 37 32 63 32 62 34 34 31 34 61 39 37 66   3f972c2b4414a97f
+0160  36 35 37 0d 0a 41 63 63 65 70 74 3a 20 2a 2f 2a   657..Accept: */*
+0170  0d 0a 41 63 63 65 70 74 2d 4c 61 6e 67 75 61 67   ..Accept-Languag
+0180  65 3a 20 65 6e 2d 75 73 0d 0a 41 63 63 65 70 74   e: en-us..Accept
+0190  2d 45 6e 63 6f 64 69 6e 67 3a 20 67 7a 69 70 2c   -Encoding: gzip,
+01a0  20 64 65 66 6c 61 74 65 0d 0a 41 75 74 68 6f 72    deflate..Author
+01b0  69 7a 61 74 69 6f 6e 3a 20 42 61 73 69 63 20 64   ization: Basic d
+01c0  58 4e 6c 63 6e 52 6c 63 33 51 36 63 47 46 7a 63   XNlcnRlc3Q6cGFzc
+01d0  33 64 76 63 6d 51 3d 0d 0a 43 6f 6e 6e 65 63 74   3dvcmQ=..Connect
+01e0  69 6f 6e 3a 20 6b 65 65 70 2d 61 6c 69 76 65 0d   ion: keep-alive.
+01f0  0a 48 6f 73 74 3a 20 74 77 69 74 74 65 72 2e 63   .Host: twitter.c
+0200  6f 6d 0d 0a 0d 0a                                 om....
+Basic Credentials (17 bytes): <.>
+0000  75 73 65 72 74 65 73 74 3a 70 61 73 73 77 6f 72   usertest:passwor
+0010  64                                                d
+----
+<.> Notice that the supposed base64 encoded string Authorization has been decoded.
+
+The username and password of the Twitter authentication is.
+
+----
+usertest:password
+----
+
+
+== Challenge Summaries
+
+Use ``tshark -r ch3.pcap -x`` to dump the frames of the packet and automatically decode the Base64 authentication string.
+
+== Lessons Learned
+
+. Packet capture analysis (basic)
+. TShark
+
+== Conclusion
+
+TShark didn't seem to be the right tool for this challenge.
+It works, but the basic method of acquiring the password is hassle.
+
+I suggest using ``tcpdump`` which can solve the challenge in this manner.
+
+----
+$ tcpdump -Ar ch3.pcap | grep 'Authorization: Basic'
+reading from file ch3.pcap, link-type EN10MB (Ethernet), snapshot length 65535
+Authorization: Basic dXNlcnRlc3Q6cGFzc3dvcmQ=
+----
+
+Then simply decode the base64 string.
+
+[IMPORTANT] 
+.Flag
+==== 
+password
+====

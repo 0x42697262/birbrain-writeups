@@ -11,4 +11,5 @@
 * xref:Root-Me:index.adoc[]
 ** Challenges
 *** Network
+**** xref:Root-Me:twitter_authentication.adoc[]
 **** xref:Root-Me:ftp_authentication.adoc[]

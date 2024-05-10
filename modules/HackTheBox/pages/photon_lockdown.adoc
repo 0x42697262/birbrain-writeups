@@ -236,7 +236,7 @@ Turns out there was no need for that.
 
 Anyways, here's the flag.
 
-[TIP] 
+[IMPORTANT] 
 .Flag
 ==== 
 HTB{N0w_Y0u_C4n_L0g1n}
