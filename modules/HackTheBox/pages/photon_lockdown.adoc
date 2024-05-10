@@ -239,5 +239,5 @@ Anyways, here's the flag.
 [IMPORTANT] 
 .Flag
 ==== 
-HTB{N0w_Y0u_C4n_L0g1n}
+HTB\{N0w_Y0u_C4n_L0g1n\}
 ====
