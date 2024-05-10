@@ -24,7 +24,7 @@ The data to be looked for should contain ``DATA: Password:`` until to ``DATA: \r
 
 The characters between those two should contain the password.
 
-== Reconnaissance
+=== Reconnaissance
 
 Check the file type.
 
@@ -37,7 +37,7 @@ The packet capture file is stored in binary format mixed with some strings.
 
 Better use Wireshark for this.
 
-== Wireshark
+=== Wireshark
 
 . Open the file.
 . Right click the first packet, then select menu:Follow[TCP Stream]
@@ -99,7 +99,7 @@ Password retrieved: ``user``.
 
 This is a TELNET packet capture file challenge where the password is retrieved by following the TCP stream.
 
-menu:Wireshark[Follow > TCP Stream]
+menu:Wireshark[Right Click First Packet > Follow > TCP Stream]
 
 It is possible to use TShark for this however based on my online searches, it might be needed to concatenate the strings manually.
 
