@@ -1,0 +1,147 @@
+= TELNET - authentication
+
+Author:: 0x42697262
+Category:: Network
+Difficulty:: Very Easy
+Play Date:: 2023/11/20 - 2023/11/20
+
+== Introduction
+
+.Challenge Description
+****
+Find the user password in this TELNET session capture.
+****
+
+A packet capture file of TELNET packet is provided.
+
+== Methodology
+
+It is expected to know TELNET's protocol.
+Otherwise, read TELNET's documentation or look it up online.
+
+The goal is to retrieve the password.
+The data to be looked for should contain ``DATA: Password:`` until to ``DATA: \r`` is found.
+
+The characters between those two should contain the password.
+
+== Reconnaissance
+
+Check the file type.
+
+----
+$ file ch2.pcap
+ch2.pcap: pcap capture file, microsecond ts (little-endian) - version 2.4 (Ethernet, capture length 1514)
+----
+
+The packet capture file is stored in binary format mixed with some strings.
+
+Better use Wireshark for this.
+
+== Wireshark
+
+. Open the file.
+. Right click the first packet, then select menu:Follow[TCP Stream]
+
+This will combine all frames into one and at the same time decode it to ASCII text.
+
+----
+........... ..!.."..'.....#..%..%........... ..!..".."........P. ....".....b........b....	B.
+........................"......'.....#..&..&..$..&..&..$.. .....#.....'........... .9600,9600....#.bam.zing.org:0.0....'..DISPLAY.bam.zing.org:0.0......xterm-color.............!.............."............
+OpenBSD/i386 (oof) (ttyp1)
+
+login: .."........"ffaakkee
+.
+Password:user <.>
+.
+Last login: Thu Dec  2 21:32:59 on ttyp1 from bam.zing.org
+Warning: no Kerberos tickets issued.
+OpenBSD 2.6-beta (OOF) #4: Tue Oct 12 20:42:32 CDT 1999
+
+Welcome to OpenBSD: The proactively secure Unix-like operating system.
+
+Please use the sendbug(1) utility to report bugs in the system.
+Before reporting a bug, please try to reproduce it with the latest
+version of the code.  With bug reports, please try to ensure that
+enough information to reproduce the problem is enclosed, and if a
+known fix for it exists, include that as well.
+
+$ llss
+.
+$ llss  --aa
+.
+.         ..        .cshrc    .login    .mailrc   .profile  .rhosts
+$ //ssbbiinn//ppiinngg  wwwwww..yyaahhoooo..ccoomm
+.
+PING www.yahoo.com (204.71.200.74): 56 data bytes
+64 bytes from 204.71.200.74: icmp_seq=0 ttl=239 time=73.569 ms
+64 bytes from 204.71.200.74: icmp_seq=1 ttl=239 time=71.099 ms
+64 bytes from 204.71.200.74: icmp_seq=2 ttl=239 time=68.728 ms
+64 bytes from 204.71.200.74: icmp_seq=3 ttl=239 time=73.122 ms
+64 bytes from 204.71.200.74: icmp_seq=4 ttl=239 time=71.276 ms
+64 bytes from 204.71.200.74: icmp_seq=5 ttl=239 time=75.831 ms
+64 bytes from 204.71.200.74: icmp_seq=6 ttl=239 time=70.101 ms
+64 bytes from 204.71.200.74: icmp_seq=7 ttl=239 time=74.528 ms
+64 bytes from 204.71.200.74: icmp_seq=9 ttl=239 time=74.514 ms
+64 bytes from 204.71.200.74: icmp_seq=10 ttl=239 time=75.188 ms
+64 bytes from 204.71.200.74: icmp_seq=11 ttl=239 time=72.925 ms
+...^C
+.--- www.yahoo.com ping statistics ---
+13 packets transmitted, 11 packets received, 15% packet loss
+round-trip min/avg/max = 68.728/72.807/75.831 ms
+$ eexxiitt
+.
+----
+<.> Found the password
+
+Password retrieved: ``user``.
+
+== Challenge Summaries
+
+This is a TELNET packet capture file challenge where the password is retrieved by following the TCP stream.
+
+menu:Wireshark[Follow > TCP Stream]
+
+It is possible to use TShark for this however based on my online searches, it might be needed to concatenate the strings manually.
+
+----
+$ tshark -q -r ch2.pcap -z follow,tcp,hex,0
+...
+	00000084  6c 6f 67 69 6e 3a 20                              login:
+000000C5  ff fc 22 ff fd 01                                 .."...
+	0000008B  ff fb 01                                          ...
+	0000008E  ff fe 22                                          .."
+000000CB  66                                                f
+	00000091  66                                                f
+000000CC  61                                                a
+	00000092  61                                                a
+000000CD  6b                                                k
+	00000093  6b                                                k
+000000CE  65                                                e
+	00000094  65                                                e
+000000CF  0d 00                                             ..
+	00000095  0d 0a                                             ..
+	00000097  50 61 73 73 77 6f 72 64  3a                       Password :
+000000D1  75                                                u
+000000D2  73                                                s
+000000D3  65                                                e
+000000D4  72                                                r
+000000D5  0d 00                                             ..
+...
+----
+
+== Lessons Learned
+
+. Packet capture analysis (basic)
+. Wireshark
+. TELNET echos data back to the client
+. TELNET sends each character one by one
+
+== Conclusion
+
+A bit time consuming but it was a simple tutorial on using Wireshark for sniffing TELNET packets.
+
+[IMPORTANT] 
+.Flag
+==== 
+user
+====
