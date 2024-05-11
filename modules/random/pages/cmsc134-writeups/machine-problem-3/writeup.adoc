@@ -895,3 +895,4 @@ Voila! We prevented CRSF attacks using this CRSF token security measure.
 
 * https://sycasec.github.io/sycasec/post/mp3[sycasec's writeup]
 * https://hackmd.io/@Kiyent/ryAW4SifC[kiyent's writeup using burpsuite]
+* https://hackmd.io/@gebmecod/Hyfji9hG0[gebmecod's writeup]
