@@ -891,6 +891,19 @@ Voila! We prevented CRSF attacks using this CRSF token security measure.
 *You can download the patched source code of the web server xref:attachment$cmsc134-writeups/machine-problem-3/patched.tar.xz[here].*
 ====
 
+== Conclusion
+
+The web server we analyzed was fraught with vulnerabilities, primarily stemming from a lack of input sanitization and validation.
+We successfully exploited the server, bypassing authentication, executing arbitrary SQL queries and JavaScript, and even impersonating users through session token manipulation.
+These vulnerabilities, if left unaddressed, could lead to serious security breaches, data theft, and website defacement.
+
+However, by meticulously patching the identified flaws, we showcased effective mitigation strategies.
+Implementing input parameterization, character limitations, HTML tag cleaning, and CSRF token validation significantly bolstered the server's defenses against SQL injection, XSS, and CSRF attacks.
+
+This exercise underscores the critical importance of robust security practices in web development.
+By proactively addressing vulnerabilities, developers can safeguard their applications and protect user data from malicious actors.
+Continuous vigilance and adherence to best practices are essential for maintaining a secure online environment.
+
 == Writeups from other people
 
 * https://sycasec.github.io/sycasec/post/mp3[sycasec's writeup]
