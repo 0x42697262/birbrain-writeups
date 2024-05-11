@@ -8,9 +8,9 @@ I won't include blog writeups.
 |===
 |Writeup |Github Link
 
-|xref:cmsc134-machine-problem-1.adoc[Machine Problem 1: Buffer overflow to exit]
+|xref:./machine-problem-1/index.adoc[Machine Problem 1: Buffer overflow to exit]
 |https://github.com/0x42697262/CMSC134-Writeups/blob/main/Machine_Problem_1[]
 
-|Machine Problem 3: This Damned Vulnerable Snake!
+|xref:./machine-problem-3/index.adoc[Machine Problem 3: This Damned Vulnerable Snake!]
 |https://github.com/0x42697262/CMSC134-Writeups/blob/main/Machine_Problem_3[]
 |===

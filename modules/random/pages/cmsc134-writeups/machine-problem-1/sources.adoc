@@ -1,0 +1,10 @@
+= Sources
+
+== vuln.c
+
+Download xref:attachment$cmsc134-writeups/machine-problem-1/vuln.c[vuln.c].
+
+[,c]
+----
+include::attachment$cmsc134-writeups/machine-problem-1/vuln.c[]
+----

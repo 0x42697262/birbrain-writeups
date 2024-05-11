@@ -14,8 +14,11 @@
 
 [random]
 * xref:random:index.adoc[]
-** xref:random:cmsc134-writeups.adoc[]
-*** xref:random:cmsc134-machine-problem-1.adoc[]
-**** xref:random:cmsc134-machine-problem-1-writeup.adoc[]
-**** xref:random:cmsc134-machine-problem-1-sources.adoc[]
+** xref:random:cmsc134-writeups/index.adoc[]
+*** xref:random:cmsc134-writeups/machine-problem-1/index.adoc[]
+**** xref:random:cmsc134-writeups/machine-problem-1/writeup.adoc[]
+**** xref:random:cmsc134-writeups/machine-problem-1/sources.adoc[]
+*** xref:random:cmsc134-writeups/machine-problem-3/index.adoc[]
+**** xref:random:cmsc134-writeups/machine-problem-3/writeup.adoc[]
+**** xref:random:cmsc134-writeups/machine-problem-3/sources.adoc[]
 
