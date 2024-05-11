@@ -2,13 +2,13 @@
 0x42697262; Orochi; Jinx
 2024-02-24
 
+## This Damned Vulnerable Snake!
+
 Authors:
 
 - 0x42697262
 - Jinx
 - Orochi
-
-## This Damned Vulnerable Snake!
 
 == TL;DR
 
@@ -49,7 +49,7 @@ curl 'http://0.0.0.0:5000/posts' -X POST -H "Cookie: session_token=' UNION SELEC
 curl -L 'http://0.0.0.0:5000/logout'  -H "Cookie: session_token=' UNION SELECT 1 AS id, 'maldev' AS username FROM users --"
 ----
 
-==== User Message CSRF via POST Request (aCVE-2024-0004)
+==== Cross-Site Request Forgery (aCVE-2024-0004)
 
 Create ``malicious.html`` where a form calls the post method on an endpoint with an SQL injection as the message.
 
@@ -712,7 +712,7 @@ This vulnerability might give a hint to CSRF (Cross-Site Request Forgery) attack
 
 
 
-==== User Message CSRF via POST Request (aCVE-2024-0004)
+=== Cross-Site Request Forgery (aCVE-2024-0004)
 
 Earlier, we were talking about using the attacker's own machines and the server database to commit cyber attacks to the website.
 
@@ -885,6 +885,11 @@ if user:
 ----
 
 Voila! We prevented CRSF attacks using this CRSF token security measure.
+
+[IMPORTANT]
+====
+*You can download the patched source code of the web server xref:attachment$cmsc134-writeups/machine-problem-3/patched.tar.xz[here].*
+====
 
 == Writeups from other people
 
