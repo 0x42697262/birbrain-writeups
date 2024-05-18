@@ -3,6 +3,8 @@
 ** Challenges
 *** Hardware
 **** xref:HackTheBox:photon_lockdown.adoc[]
+*** Mobile
+**** xref:HackTheBox:cat.adoc[]
 
 [Root-Me]
 * xref:Root-Me:index.adoc[]

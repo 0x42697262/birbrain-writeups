@@ -1,0 +1,130 @@
+= Cat
+
+Author:: 0x42697262
+Category:: Mobile
+Difficulty:: Easy
+Play Date:: 2024/05/19 - 2024/05/19
+
+== Introduction
+
+.Challenge Description
+****
+Easy leaks
+****
+
+This challenge contains a backup file.
+Recover the flag.
+
+== Methodology
+
+Gather information about the binary file.
+Proceed to extract the flag.
+
+
+=== Reconnaissance
+
+Check the file type
+
+----
+$ file cat.ab
+cat.ab: Android Backup, version 5, Compressed, Not-Encrypted
+----
+
+It's an Android Backup file compressed in ``tar`` format.
+
+The file is actually an executable however it would not execute.
+
+----
+$ ls -la cat.ab
+.rwxrw-rw- birb users 4.0 MB Fri Mar  6 21:25:56 2020  cat.ab
+----
+
+There are two ways to decompress the archive.
+
+=== File Signature Insertion
+
+The magic byte that's going to be used is ``gzip`` which is
+
+----
+1F 8B
+----
+
+In ``bash``, it is possible to perform the magic byte insertion in this manner
+
+----
+$ ( printf "\x1f\x8b\x08\x00\x00\x00\x00\x00" ; tail -c +25 cat.ab ) |  tar xfvz -
+----
+
+which should now decompress two directories
+
+----
+drwxr-xr-x birb users 2.6 KB Sun May 19 02:50:15 2024  apps
+drwxr-xr-x birb users   2 B  Sun May 19 02:50:15 2024  shared
+----
+
+The decompression will cause an error or a warning due to having no magic byte for ending the gzip file
+
+----
+gzip: stdin: unexpected end of file
+shared/0/Podcasts
+shared/0/Movies
+shared/0/Notifications
+shared/0/Music
+shared/0/Ringtones
+tar: Child returned status 1
+tar: Error is not recoverable: exiting now
+----
+
+But that does not matter since the files are properly decompressed.
+
+=== Android Backup Processor
+
+Using https://sourceforge.net/projects/android-backup-processor[Android Backup Processor], it is possible to decompress the file even if it contains a password.
+
+This is achieved by performing
+
+----
+$ java -jar abp.jar unpack cat.ab cat.tar ""
+----
+
+which should decompress the same directories and files.
+
+The empty ``""`` string is the password of the backup file if ever it was encrypted.
+
+
+== Finding The Flag
+
+Apparently, there is no need to check each and every files of the challenge as the flag is stored in the image itself.
+Literally, it can be viewed.
+
+The flag is located in ``IMAG0004.jpg``.
+
+== Challenge Summaries
+
+Extract the archive with ``tar``
+
+----
+$ ( printf "\x1f\x8b\x08\x00\x00\x00\x00\x00" ; tail -c +25 cat.ab ) |  tar xfvz -
+----
+
+and find the flag by opening the image ``IMAG0004.jpg`` using an image viewer.
+
+
+== Lessons Learned
+
+. Android Backup
+
+== Conclusion
+
+I thought that the flag was stored somewhere in the sqlite3 database files of the android backup.
+Turns out, it was just an image all along.
+
+I have wasted almost an hour for this challenge because I skipped checking the images thinking there's no way that a flag would exists there.
+
+Turns out, there was.
+
+[IMPORTANT] 
+.Flag
+==== 
+HTB\{ThisBackupIsUnprotected\}
+====
