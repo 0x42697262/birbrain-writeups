@@ -1,5 +1,8 @@
 [HackTheBox]
 * xref:HackTheBox:index.adoc[]
+** Machines
+*** Linux
+**** xref:HackTheBox:bizness.adoc[]
 ** Challenges
 *** Hardware
 **** xref:HackTheBox:photon_lockdown.adoc[]
