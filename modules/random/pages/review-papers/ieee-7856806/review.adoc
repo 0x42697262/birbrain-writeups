@@ -115,3 +115,13 @@ For instance, comparing the power consumption of non-neural network-based IDS im
 While a detailed analysis of these comparisons may not be necessary, presenting a table with relevant information would bolster the study's support.
 
 == Synthesis
+
+Implementing neural network perceptron algorithms for IDS is certainly not novel due to various existing studies yet neural networks are certainly capable of classifying network threats based on the provided dataset.
+For this study to be considered novel, further analysis on the power consumption of neural networks should be explored.
+This will contribute to the literature of perceptron algorithms and IDS.
+Furthermore, simulation of network threats should have been considered.
+This way, the information regarding reliability and response time of neural network-based IDS will be accounted.
+Giving further insights to the research gaps and measure the relative differences between implementations.
+Regardless of missed opportunities of this study, the authors were able to provide a simple yet comprehensive study regarding multilayer perceptron models.
+
+

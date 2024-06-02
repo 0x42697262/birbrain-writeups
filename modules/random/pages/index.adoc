@@ -9,4 +9,4 @@ It can be academic related as well.
 
 == Review Papers
 
-. xref:./review-papers/index.adoc[Review Papers]
+Check it on xref:./review-papers/index.adoc[Review Papers].
