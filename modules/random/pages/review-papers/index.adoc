@@ -1,0 +1,6 @@
+= Review Papers
+
+Probably only one paper will ever be reviewed here.
+
+Basically, this section is about reviewing research papers.
+A cool tutorial on how to do review papers can be read https://pages.cpsc.ucalgary.ca/~pwlfong/Pub/inroads2009.pdf[here].

@@ -1,0 +1,117 @@
+= Multilayer Perceptron Algorithms for Cyberattack Detection
+:sectnums:
+
+A paper review for **Multilayer Perceptron Algorithms for Cyberattack Detection**footnote:[DOI: https://doi.org/10.1109/NAECON.2016.7856806[10.1109/NAECON.2016.7856806]].
+This research paper was published in 2016.
+
+== Summary
+
+=== Motivation
+
+In this research paper, the authors acknowledge the issues that have arisen in Internet network security due to cyberattacks by implementing neural network algorithms for intrusion detection systems.
+This approach is potentially efficient because it can be utilized on low-end hardware with limited computing power, which is increasingly important as the volume of Internet traffic continues to grow.
+
+The use of neural network algorithms is effective in combating network intrusions because these algorithms can classify threats versus normal packets.
+Additionally, neural networks are highly useful for detecting previously unseen patterns of threats, eliminating the need to reprogram existing solutions to identify new and emerging threat patterns.
+The goal is to implement a system that operates with lower power requirements.
+
+=== Contribution
+
+The paper openly introduced a novel approach in detecting network intrusions through implementing multilayer perceptron models.
+The authors were able to achieve decent detection accuracy.
+This paper contribute to the literature by providing a proof of concept that multilayer perceptron models are capable of detecting network intrusions.
+However, this research requires further study and analysis in order to contribute to the literature as studies as previous literaturefootnote:nn[E. Hodo et al., "Threat analysis of IoT networks using artificial neural network intrusion detection system," 2016 International Symposium on Networks, Computers and Communications (ISNCC), Yasmine Hammamet, Tunisia, 2016, pp. 1-6, doi: 10.1109/ISNCC.2016.7746067. keywords: {Internet of things;Artificial Neural Network;Denial of Service;Intrusion detection System and Multi-Level Perceptron},]footnote:nn2[Bivens, A., Palagiri, C., Smith, R., Szymanski, B., & Embrechts, M. (2002). Network-based intrusion detection using neural networks. Intelligent Engineering Systems through Artificial Neural Networks, 12(1), 579-584.] have already existed.
+
+=== Methodology
+
+The authors did not present any major theorems as the main argument is that perceptron learning architectures can be used to implement an intrusion detection system.
+The substantiation comes from describing the methodology, dataset, and preprocessing, rather than formal proofs.
+The key experiments are training and evaluating the perceptron algorithms on the KDD dataset, with the PCA providing data analysis.
+Which was first done by describing the two phases of perceptron algorithms, training and testing.
+During the training process, the weights are updated iteratively using a learning rule.
+Then the errors are minimized as the model then performs the test process without updating the weights.
+
+Three perceptron algorithms were implemented to the dataset, (a) a single layer perceptron, (b) a multilayer perceptron with one hidden layer, and (c) a multilayer perceptron with two hidden layers.
+To train and evaluate the intrusion detection system, they used the Knowledge Discovery and Datamining (KDD) dataset which contained thousands of network samples which was shown to contain twenty-two attack types and normal packets.
+Principal Component Analysis (PCA) were conducted to visualize the difficulty of separating attack classes and the simplified classification of attack vs normal.
+The three perceptron algorithms were then tested and compared against each other to determine the model with the highest accuracy and simplest to implement.
+The final Root Mean Squared (RMS) were used as metric for comparison.
+
+=== Results and Findings
+
+The final classification accuracy of the three proposed perceptron models were between 98.52% and 99.85%.
+There were two models, 10 hidden neurons in one layer and three hidden layers, that achieved the highest classification accuracy.
+The evaluation of these models for the intrusion detection system were then used as baseline for picking the best model.
+As there were two models that had the same exact classification accuracy, the simpler model with 10 hidden neurons and one layer were chosen.
+
+This single layer perceptron model were able to detect low percentages of miss and false positives.
+However, since there were quite a few of missed packets, the authors performed an increase in bias of the model to further increase the chance of detecting threats.
+By adding the constant value bias to the model, the results has shown a massive decrease of missed network threats.
+However, there was a huge increase of false positive detections.
+This works as intended because decreasing the chances of missed network threats is preferrable compared to a falsely classified packet due to the fact of an event happening from the risk of missing a threat.
+
+=== Conclusions
+
+A network intrusion detection system could be implemented using perceptron algorithms.
+The authors used KDD dataset that was from 1999 which threats weren't still relatively advanced to this date.
+The proposed neural network implementation achieved decent performance in detecting threats.
+However, the perceptron algorithms were not tested on dataset outside KDD.
+Furthermore, a studyfootnote:nn2[] about neural network and IDS has already been conducted since 2002.
+The contributions of this study were relatively suboptimal.
+
+The authors mentioned low power IDS but no procedures of experiment were conducted to test whether implementing neural networks were better than the previous IDS.
+Further analysis between neural network implementation and previous IDS implementations could benefit this study more.
+
+
+== Critique
+
+=== Lack of Modern Dataset
+
+While the authors implemented decent classification accuracy on the perceptron algorithms, the dataset were trained on old network capture from 1999.
+This meant that the study did not explore new datasets of recent years were advanced methods of threatsfootnote:[Vanhoef, M., & Piessens, F. (2017, October). Key reinstallation attacks: Forcing nonce reuse in WPA2. In Proceedings of the 2017 ACM SIGSAC conference on computer and communications security (pp. 1313-1328).]footnote:[Farwell, J. P., & Rohozinski, R. (2011). Stuxnet and the future of cyber war. Survival, 53(1), 23-40.] that the model would most likely miss due to advancement in technology.
+Not only that, this study did not test the model on dataset outside KDD for recent network threats that could potentially help verify the experiment.
+This raises concerns about the model's relevance and effectiveness in the current digital age.
+Network traffic patterns, intrusion techniques, and security protocols have evolved significantly over the years.
+Therefore, the model's performance on a contemporary dataset would provide a more accurate assessment of its real-world applicability and robustness against modern threats.
+
+One of the goals of this study is to test whether neural networks can detect threats in the network.
+Neural networks are a promising approach for identifying unseen patterns.
+However, the study's failure to test the perceptron algorithms on a newer dataset raises concerns about their ability to achieve satisfactory accuracy.
+Given the critical importance of security for internet-connected infrastructures, relying on an IDS based on perceptron algorithms that can accurately classify network threats is crucial.
+Therefore, this study should have included a comparison to previously existing solutions.
+Such an analysis would provide a clearer understanding of which IDS implementation performs best.
+A study on similar year by Subba et. alfootnote:[Subba, B., Biswas, S., & Karmakar, S. (2016, March). A neural network based system for intrusion detection and attack classification. In 2016 twenty second National Conference on Communication (NCC) (pp. 1-6). Ieee.] implemented the same methodology with a much recent dataset from the year 2009.
+Subba et. al used similar dataset as KDD but with an updated Knowledge Database.
+
+The the analysis of this study for perceptron algorithms is novel.
+The authors have shown that the neural network models were capable of classifying network threats.
+However, real-world applications of cybersecurity should not be underestimated as threats can appear in any form.
+Basically, a model that works in the laboratory does not imply its practical usage if it were to be applied in the real-world.
+As this study solely focuses on determining whether perceptron algorithms are capable of performing intrusion detection, further research is needed to explore their real-world applications.
+One area for improvement is the inclusion of multiple datasets from various sources.
+Additionally, the authors could enhance the study by simulating their own cyberattacks in a controlled laboratory environment.
+This approach would provide a more comprehensive evaluation of the perceptron algorithms' ability to detect threats in the network.
+
+In Table 2, the authors noted that the best model selected missed 592 threats and suggested that adding a constant value bias to the model could significantly reduce these missed threats on Table 3.
+While this approach is promising, it would be preferable to conduct a further analysis of the specific threats that were missed by the model.
+This additional analysis would provide valuable insights into the nature and severity of the missed threats.
+
+=== Missed Analysis Relative to Motivation
+
+The authors have claimed that neural networks can be used to implement an IDS with low power consumption.
+However, there is no analysis provided regarding the power usage of the perceptron algorithms.
+This lack of analysis leaves a critical question unanswered and represents a significant oversight in the study.
+An evaluation of the power consumption of the perceptron algorithms is essential to substantiate the authors' claims and to fully understand the feasibility of deploying these algorithms in low-power environments.
+
+Furthermore, the absence of power usage analysis undermines the practical implications of the study.
+In real-world applications, power efficiency is a key consideration, especially for devices with limited resources.
+Without empirical data or comparative analysis of power consumption, it is challenging to gauge the true efficiency of the proposed IDS.
+Instead of simply citing literature that claims neural networks are power efficient or low power, the authors should have tested these claims within their study.
+This gap in the research not only limits the study's intention of proving the capabilities of perceptron models but also raises doubts about the overall practicality of the implemented IDS based on perceptron algorithms.
+
+A paper that mentions a particular aspect should include an analysis of that aspect, or otherwise explicitly reference it, to provide a clear point of reference instead of omitting it.
+While this research does not primarily focus on comparing other methods of IDS that have already been implemented, providing relevant information about them would be beneficial.
+For instance, comparing the power consumption of non-neural network-based IDS implementations with neural network-based IDS implementations could provide valuable context.
+While a detailed analysis of these comparisons may not be necessary, presenting a table with relevant information would bolster the study's support.
+
+== Synthesis
