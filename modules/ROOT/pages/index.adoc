@@ -31,7 +31,7 @@ Your goal is to bird.
 
 I see a bird.
 
-== Challenge Summaries
+== Results <.>
 
 . Painful to keep refilling the seeds.
 
@@ -51,5 +51,6 @@ Very hard.
 
 I thank you, seed box trap.
 ....
+<.> Updated as of June 19, 2024
 
 The format should look like xref:example.adoc[this].
