@@ -1,8 +1,14 @@
+[BlueTeamLabsOnline]
+* xref:BlueTeamLabsOnline:index.adoc[]
+** Investigations
+*** xref:BlueTeamLabsOnline:piggy.adoc[]
+
 [HackTheBox]
 * xref:HackTheBox:index.adoc[]
 ** Machines
 *** Linux
 **** xref:HackTheBox:bizness.adoc[]
+**** xref:HackTheBox:perfection.adoc[]
 ** Challenges
 *** Hardware
 **** xref:HackTheBox:photon_lockdown.adoc[]

