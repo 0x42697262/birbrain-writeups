@@ -238,7 +238,7 @@ undefined8 main(void)
 
 ``__isoc99_scanf()`` is a function that takes two parameters: format and buffer.
 This reads a formatted input from the stdin.
-See the https://codebrowser.dev/glibc/glibc/stdio-common/isoc99_scanf.c.htmlsource code] for reference.
+See the https://codebrowser.dev/glibc/glibc/stdio-common/isoc99_scanf.c.html[source code] for reference.
 
 ``local_14`` variable is then passed to the ``validate_key`` function.
 If it's **true**, then the input key is valid.
