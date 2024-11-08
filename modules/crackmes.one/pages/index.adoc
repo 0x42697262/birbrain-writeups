@@ -1,0 +1,8 @@
+= crackmes.one
+
+Website: https://crackmes.one/[]footnote:[All archive passwords are ``crackmes.one``]
+
+This is my attempt to learn reverse engineering and cracking in general.
+Hopefully, I can create a roadmap for reverse engineering based on my experience.
+
+

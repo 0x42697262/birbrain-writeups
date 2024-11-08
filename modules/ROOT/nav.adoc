@@ -3,6 +3,10 @@
 ** Investigations
 *** xref:BlueTeamLabsOnline:piggy.adoc[]
 
+[crackmes.one]
+* xref:crackmes.one:index.adoc[]
+** xref:crackmes.one:keyg3nme/keyg3nme.adoc[]
+
 [HackTheBox]
 * xref:HackTheBox:index.adoc[]
 ** Machines
