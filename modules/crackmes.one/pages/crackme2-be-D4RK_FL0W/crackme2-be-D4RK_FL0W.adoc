@@ -1,0 +1,429 @@
+= crackme2-be-D4RK_FL0W
+:tip-caption: 💡
+
+Author:: 0x42697262
+Play Date:: 2024/11/08 - 2024/11/9
+
+.https://crackmes.one/crackme/5c95646333c5d46ecd37c960[D4RKFL0W's crackme2-be-D4RK_FL0W]
+****
+Author:: D4RKFL0W
+Language:: C/C++
+Upload:: 10:40 PM 03/22/2019
+Platform:: Unix/linux etc.
+Difficulty:: 2.8
+Quality:: 4.3
+Arch:: x86-64
+Description:: A second simple crackme(Aimed at beginners). Any feedback welcome.
+****
+
+== Environment Setup
+
+Host:: ParrotOS
+Tools:: Ghidra, gef, strings, file, objdump, ltrace
+
+== Static Analysis
+
+First checked what type of binary the challenge is.
+
+.``$ file crack2-by-D4RK_FL0W``
+----
+crack2-by-D4RK_FL0W: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0, BuildID[sha1]=0871944192e8647d242b6212762d588346cd1b73, not stripped
+----
+
+This crackme is similar to the xref:crackmes.one:keyg3nme/keyg3nme.adoc[previous] challenge that I did.
+Lucky that the debug information aren't stripped.
+
+Next I check if there are hardcoded strings.
+
+.``$ strings crack2-by-D4RK_FL0W``
+----
+/lib64/ld-linux-x86-64.so.2
+d}$+b
+libstdc++.so.6
+__gmon_start__
+_ITM_deregisterTMCloneTable
+_ITM_registerTMCloneTable
+_ZNSt8ios_base4InitD1Ev
+_ZNSt8ios_base4InitC1Ev
+_ZNSi7getlineEPcl
+_ZSt3cin
+_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc
+_ZSt4cout
+libm.so.6
+libgcc_s.so.1
+libc.so.6
+__cxa_atexit
+strcat
+__cxa_finalize
+__libc_start_main
+GLIBC_2.2.5
+GLIBCXX_3.4
+u/UH
+BBCCf
+[]A\A]A^A_
+Please Enter The Password: 
+***Correct You Cracked It***
+Wrong
+;*3$"
+Hello
+this
+crackMe
+from
+D4RK_FL0W
+HAVE
+GCC: (Debian 8.2.0-20) 8.2.0
+crtstuff.c
+deregister_tm_clones
+__do_global_dtors_aux
+completed.7325
+__do_global_dtors_aux_fini_array_entry
+frame_dummy
+__frame_dummy_init_array_entry
+crack2-by-D4RK_FL0W.cpp
+_ZStL19piecewise_construct
+_ZStL8__ioinit
+_Z41__static_initialization_and_destruction_0ii
+_GLOBAL__sub_I_pass
+__FRAME_END__
+__GNU_EH_FRAME_HDR
+_DYNAMIC
+__init_array_end
+__init_array_start
+_GLOBAL_OFFSET_TABLE_
+_edata
+key6
+_ZNSi7getlineEPcl@@GLIBCXX_3.4
+_IO_stdin_used
+_Z3xxxv
+__cxa_finalize@@GLIBC_2.2.5
+main
+key3
+__dso_handle
+key4
+__cxa_atexit@@GLIBC_2.2.5
+key1
+_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@@GLIBCXX_3.4
+key9
+__TMC_END__
+key2
+_ZSt4cout@@GLIBCXX_3.4
+__data_start
+key7
+__bss_start
+_ZNSt8ios_base4InitC1Ev@@GLIBCXX_3.4
+__libc_csu_init
+key8
+_ITM_deregisterTMCloneTable
+strcat@@GLIBC_2.2.5
+__libc_csu_fini
+_ZSt3cin@@GLIBCXX_3.4
+_Z14check_passwordPc
+__libc_start_main@@GLIBC_2.2.5
+__gmon_start__
+_ITM_registerTMCloneTable
+key5
+_ZNSt8ios_base4InitD1Ev@@GLIBCXX_3.4
+.symtab
+.strtab
+.shstrtab
+.interp
+.note.ABI-tag
+.note.gnu.build-id
+.gnu.hash
+.dynsym
+.dynstr
+.gnu.version
+.gnu.version_r
+.rela.dyn
+.rela.plt
+.init
+.plt.got
+.text
+.fini
+.rodata
+.eh_frame_hdr
+.eh_frame
+.init_array
+.fini_array
+.dynamic
+.got.plt
+.data
+.bss
+.comment
+----
+
+There's a few strings that might have been initialized as a variable.
+
+----
+Please Enter The Password: 
+***Correct You Cracked It***
+Wrong
+Hello
+this
+crackMe
+from
+D4RK_FL0W
+HAVE
+----
+
+This might give a hint about figuring the password.
+
+
+I always use *objdump* to get an overview of the binary before heading to Ghidra.
+Albeit 
+
+.``$ objdump -r -M intel -d crack2-by-D4RK_FL0W``
+----
+0000000000001175 <main>:
+    1175:	55                   	push   rbp
+    1176:	48 89 e5             	mov    rbp,rsp
+    1179:	48 83 ec 20          	sub    rsp,0x20
+    117d:	48 8d 35 85 0e 00 00 	lea    rsi,[rip+0xe85]        # 2009 <_ZStL19piecewise_construct+0x1>
+    1184:	48 8d 3d 15 2f 00 00 	lea    rdi,[rip+0x2f15]        # 40a0 <_ZSt4cout@GLIBCXX_3.4>
+    118b:	e8 c0 fe ff ff       	call   1050 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+    1190:	48 8d 45 e0          	lea    rax,[rbp-0x20]
+    1194:	ba 11 00 00 00       	mov    edx,0x11
+    1199:	48 89 c6             	mov    rsi,rax
+    119c:	48 8d 3d 1d 30 00 00 	lea    rdi,[rip+0x301d]        # 41c0 <_ZSt3cin@GLIBCXX_3.4>
+    11a3:	e8 88 fe ff ff       	call   1030 <_ZNSi7getlineEPcl@plt>
+    11a8:	e8 ea 00 00 00       	call   1297 <_Z3xxxv> <.>
+    11ad:	48 8d 45 e0          	lea    rax,[rbp-0x20]
+    11b1:	48 89 c7             	mov    rdi,rax
+    11b4:	e8 33 00 00 00       	call   11ec <_Z14check_passwordPc> <.>
+    11b9:	84 c0                	test   al,al
+    11bb:	74 15                	je     11d2 <main+0x5d>
+    11bd:	48 8d 35 64 0e 00 00 	lea    rsi,[rip+0xe64]        # 2028 <_ZStL19piecewise_construct+0x20>
+    11c4:	48 8d 3d d5 2e 00 00 	lea    rdi,[rip+0x2ed5]        # 40a0 <_ZSt4cout@GLIBCXX_3.4>
+    11cb:	e8 80 fe ff ff       	call   1050 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+    11d0:	eb 13                	jmp    11e5 <main+0x70>
+    11d2:	48 8d 35 6f 0e 00 00 	lea    rsi,[rip+0xe6f]        # 2048 <_ZStL19piecewise_construct+0x40>
+    11d9:	48 8d 3d c0 2e 00 00 	lea    rdi,[rip+0x2ec0]        # 40a0 <_ZSt4cout@GLIBCXX_3.4>
+    11e0:	e8 6b fe ff ff       	call   1050 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+    11e5:	b8 00 00 00 00       	mov    eax,0x0
+    11ea:	c9                   	leave
+    11eb:	c3                   	ret
+
+00000000000011ec <_Z14check_passwordPc>:
+    11ec:	55                   	push   rbp
+    11ed:	48 89 e5             	mov    rbp,rsp
+    11f0:	48 89 7d e8          	mov    QWORD PTR [rbp-0x18],rdi
+    11f4:	c7 45 fc 00 00 00 00 	mov    DWORD PTR [rbp-0x4],0x0
+    11fb:	83 7d fc 0f          	cmp    DWORD PTR [rbp-0x4],0xf
+    11ff:	7f 31                	jg     1232 <_Z14check_passwordPc+0x46>
+    1201:	8b 45 fc             	mov    eax,DWORD PTR [rbp-0x4]
+    1204:	48 63 d0             	movsxd rdx,eax
+    1207:	48 8b 45 e8          	mov    rax,QWORD PTR [rbp-0x18]
+    120b:	48 01 d0             	add    rax,rdx
+    120e:	0f b6 10             	movzx  edx,BYTE PTR [rax]
+    1211:	8b 45 fc             	mov    eax,DWORD PTR [rbp-0x4]
+    1214:	48 98                	cdqe
+    1216:	48 8d 0d c3 30 00 00 	lea    rcx,[rip+0x30c3]        # 42e0 <pass>
+    121d:	0f b6 04 08          	movzx  eax,BYTE PTR [rax+rcx*1]
+    1221:	38 c2                	cmp    dl,al
+    1223:	74 07                	je     122c <_Z14check_passwordPc+0x40>
+    1225:	b8 00 00 00 00       	mov    eax,0x0
+    122a:	eb 0b                	jmp    1237 <_Z14check_passwordPc+0x4b>
+    122c:	83 45 fc 01          	add    DWORD PTR [rbp-0x4],0x1
+    1230:	eb c9                	jmp    11fb <_Z14check_passwordPc+0xf>
+    1232:	b8 01 00 00 00       	mov    eax,0x1
+    1237:	5d                   	pop    rbp
+    1238:	c3                   	ret
+
+0000000000001297 <_Z3xxxv>: <.>
+    1297:	55                   	push   rbp
+    1298:	48 89 e5             	mov    rbp,rsp
+    129b:	48 8d 35 b9 2d 00 00 	lea    rsi,[rip+0x2db9]        # 405b <key3>
+    12a2:	48 8d 3d 37 30 00 00 	lea    rdi,[rip+0x3037]        # 42e0 <pass>
+    12a9:	e8 c2 fd ff ff       	call   1070 <strcat@plt>
+    12ae:	48 8d 05 2b 30 00 00 	lea    rax,[rip+0x302b]        # 42e0 <pass>
+    12b5:	48 c7 c1 ff ff ff ff 	mov    rcx,0xffffffffffffffff
+    12bc:	48 89 c2             	mov    rdx,rax
+    12bf:	b8 00 00 00 00       	mov    eax,0x0
+    12c4:	48 89 d7             	mov    rdi,rdx
+    12c7:	f2 ae                	repnz scas al,BYTE PTR es:[rdi]
+    12c9:	48 89 c8             	mov    rax,rcx
+    12cc:	48 f7 d0             	not    rax
+    12cf:	48 8d 50 ff          	lea    rdx,[rax-0x1]
+    12d3:	48 8d 05 06 30 00 00 	lea    rax,[rip+0x3006]        # 42e0 <pass>
+    12da:	48 01 d0             	add    rax,rdx
+    12dd:	66 c7 00 41 41       	mov    WORD PTR [rax],0x4141
+    12e2:	c6 40 02 00          	mov    BYTE PTR [rax+0x2],0x0
+    12e6:	48 8d 35 69 2d 00 00 	lea    rsi,[rip+0x2d69]        # 4056 <key2>
+    12ed:	48 8d 3d ec 2f 00 00 	lea    rdi,[rip+0x2fec]        # 42e0 <pass>
+    12f4:	e8 77 fd ff ff       	call   1070 <strcat@plt>
+    12f9:	48 8d 35 7f 2d 00 00 	lea    rsi,[rip+0x2d7f]        # 407f <key9>
+    1300:	48 8d 3d d9 2f 00 00 	lea    rdi,[rip+0x2fd9]        # 42e0 <pass>
+    1307:	e8 64 fd ff ff       	call   1070 <strcat@plt>
+    130c:	48 8d 05 cd 2f 00 00 	lea    rax,[rip+0x2fcd]        # 42e0 <pass>
+    1313:	48 c7 c1 ff ff ff ff 	mov    rcx,0xffffffffffffffff
+    131a:	48 89 c2             	mov    rdx,rax
+    131d:	b8 00 00 00 00       	mov    eax,0x0
+    1322:	48 89 d7             	mov    rdi,rdx
+    1325:	f2 ae                	repnz scas al,BYTE PTR es:[rdi]
+    1327:	48 89 c8             	mov    rax,rcx
+    132a:	48 f7 d0             	not    rax
+    132d:	48 8d 50 ff          	lea    rdx,[rax-0x1]
+    1331:	48 8d 05 a8 2f 00 00 	lea    rax,[rip+0x2fa8]        # 42e0 <pass>
+    1338:	48 01 d0             	add    rax,rdx
+    133b:	c7 00 42 42 43 43    	mov    DWORD PTR [rax],0x43434242
+    1341:	66 c7 40 04 44 00    	mov    WORD PTR [rax+0x4],0x44
+    1347:	90                   	nop
+    1348:	5d                   	pop    rbp
+    1349:	c3                   	ret
+    134a:	66 0f 1f 44 00 00    	nop    WORD PTR [rax+rax*1+0x0]
+----
+<.> ``xxx()`` is called albeit not having any parameters or returned values
+<.> ``check_password()`` function called to verify the input from stdin
+<.> This function generates a password based on the existing variable keys (key1 to key9, not all are used)
+
+I am merely guessing what this code does so far.
+
+=== Ghidra
+
+The ``main`` function in the decompiled code initiates the password generation process by calling the ``xxx()`` function, which I have relabeled as ``generate_password`` in Ghidra for clarity.
+This function is responsible for creating the required password, after which the program checks if the provided password matches the generated one.
+
+.main()
+[,c]
+----
+undefined8 main(void)
+
+{
+  char is_password_valid;
+  char password_input [32];
+  
+  std::operator<<((basic_ostream *)std::cout,"\nPlease Enter The Password: ");
+  std::basic_istream<>::getline(std::cin,(long)password_input);
+  generate_password();
+  is_password_valid = check_password(password_input);
+  if (is_password_valid == '\0') {
+    std::operator<<((basic_ostream *)std::cout,"\nWrong\n");
+  }
+  else {
+    std::operator<<((basic_ostream *)std::cout,"\n\n***Correct You Cracked It***\n");
+  }
+  return 0;
+}
+----
+
+The ``generate_password()`` function does not appear to take any parameters as input, this might hint that it relies on global variables.
+This includes ``key1`` through ``key9`` and ``password``, with ``password`` appearing to be built up incrementally through calls to the ``strcat()`` function.
+Interestingly, not all keys are utilized in the concatenation process—only ``key2``, ``key3``, and ``key9`` contribute to the final password value.
+
+Here is the ``generate_password()`` function in the decompiled code:
+
+.xxx()
+[,c]
+----
+void generate_password(void)
+
+{
+  char cVar1;
+  ulong maxed_out_ulong;
+  byte whatisthis;
+  undefined4 *address_of_password;
+  
+  whatisthis = 0;
+  strcat((char *)&password,(char *)&key3);
+  maxed_out_ulong = 0xffffffffffffffff;
+  address_of_password = &password;
+  do {
+    if (maxed_out_ulong == 0) break;
+    maxed_out_ulong = maxed_out_ulong - 1;
+    cVar1 = *(char *)address_of_password;
+    address_of_password = (undefined4 *)((long)address_of_password + (ulong)whatisthis * -2 + 1);
+  } while (cVar1 != '\0');
+  *(undefined2 *)(~maxed_out_ulong + 0x1042df) = 0x4141;
+  *(undefined *)((long)&password + ~maxed_out_ulong + 1) = 0;
+  strcat((char *)&password,(char *)&key2);
+  strcat((char *)&password,(char *)&key9);
+  maxed_out_ulong = 18446744073709551615;
+  address_of_password = &password;
+  do {
+    if (maxed_out_ulong == 0) break;
+    maxed_out_ulong = maxed_out_ulong - 1;
+    cVar1 = *(char *)address_of_password;
+    address_of_password = (undefined4 *)((long)address_of_password + (ulong)whatisthis * -2 + 1);
+  } while (cVar1 != '\0');
+  *(undefined4 *)(~maxed_out_ulong + 1065695) = 1128481346;
+  *(undefined2 *)((long)&password + ~maxed_out_ulong + 3) = 68;
+  return;
+}
+----
+
+``generate_password()`` manipulates and builds the password by concatenating specific key values and performing low-level memory operations.
+It then stores values directly at specific memory offsets, which influence the resulting password.
+
+The password validation algorithm checks each character individually. Here is the code for ``check_password``:
+
+.check_password()
+[,c]
+----
+undefined8 check_password(char *param_1)
+
+{
+  int i;
+  
+  i = 0;
+  while( true ) {
+    if (15 < i) {
+      return 1;
+    }
+    if (param_1[i] != *(char *)((long)&password + (long)i)) break;
+    i = i + 1;
+  }
+  return 0;
+}
+----
+
+This function verifies each character in the user-provided ``param_1`` against the corresponding character in the generated password, proceeding until a mismatch is found or the password is fully matched.
+If all characters match up to the length of **16** (index 15), it returns a successful match, indicating the password is correct.
+
+
+== Dynamic Analysis
+
+Unlike xref:crackmes.one:keyg3nme/keyg3nme.adoc[keyg3nme] challenge that did not require dynamic analysis, I had to run the binary with gdb (but I use https://github.com/hugsy/gef[GEF]).
+That is because I need to figure out the generated concatenated password.
+I also wanted to figure out the values of ``key1`` through ``key9`` despite only 3 keys were used.
+
+Simply fire up the binary with **gdb**.
+
+image::crackme2-be-D4RK_FL0W/1-gdb.jpg[]
+
+Run the binary to allocate memory for the process.
+This makes sure that we can set a breakpoint on the specific memory address.
+
+image::crackme2-be-D4RK_FL0W/2-run.jpg[]
+
+Next, we want to put a breakpoint in the check comparison of the password.
+Specifically, at the instruction ``38 c2``.
+
+.Insert breakpoint here
+----
+1221:	38 c2       cmp    dl,al
+----
+
+image::crackme2-be-D4RK_FL0W/3-disas.jpg[]
+
+Once that's done, simply rerun the program and print the values of ``key1`` through ``key9`` and ``pass``.
+
+image::crackme2-be-D4RK_FL0W/4-rerun.jpg[]
+
+image::crackme2-be-D4RK_FL0W/5-keys.png[]
+
+Finally, we have the password!
+Of course it's ``isAAthisFunBBCCD``.
+
+Let's try it!
+
+image::crackme2-be-D4RK_FL0W/6-cracked.jpg[]
+
+**Consider this challenge solved!**
+
+== Conclusion
+
+While it was interesting and tiring to figure out the process of decrypting the algorithm for generating the password, it was not worth of my time at all.
+Simply put, reading the values of the password from the memory was easier.
+
+It would be interesting to write a tool that automatically reads the values of variables and dump them on execution.
+I thought ``ltrace`` would work for that but it did not show the entire string characters.

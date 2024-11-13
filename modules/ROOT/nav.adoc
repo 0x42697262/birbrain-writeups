@@ -5,6 +5,7 @@
 
 [crackmes.one]
 * xref:crackmes.one:index.adoc[]
+** xref:crackmes.one:crackme2-be-D4RK_FL0W/crackme2-be-D4RK_FL0W.adoc[]
 ** xref:crackmes.one:keyg3nme/keyg3nme.adoc[]
 
 [HackTheBox]
@@ -26,6 +27,9 @@
 **** xref:Root-Me:telnet_authentication.adoc[]
 **** xref:Root-Me:twitter_authentication.adoc[]
 **** xref:Root-Me:ftp_authentication.adoc[]
+
+[TryHackMe]
+* xref:TryHackMe:index.adoc[]
 
 [random]
 * xref:random:index.adoc[]
