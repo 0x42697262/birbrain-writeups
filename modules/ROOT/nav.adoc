@@ -19,6 +19,10 @@
 **** xref:HackTheBox:photon_lockdown.adoc[]
 *** Mobile
 **** xref:HackTheBox:cat.adoc[]
+** Capture The Flag
+*** Forensics
+**** xref:HackTheBox:thorins-amulet.adoc[]
+
 
 [Root-Me]
 * xref:Root-Me:index.adoc[]
