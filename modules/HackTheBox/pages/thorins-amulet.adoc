@@ -5,10 +5,7 @@ Category:: Forensics
 Difficulty:: Very Easy
 Play Date:: 2025/03/22 - 2025/03/25
 
-[NOTE]
-....
-The challenge can be downloaded here: attachment::thorins-amulet/forensics_thorins_amulet.zip[forensics_thorins-amulet.zip]
-....
+_The challenge can be downloaded here: attachment::thorins-amulet/forensics_thorins_amulet.zip[forensics_thorins-amulet.zip]_
 
 == Overview
 
@@ -25,10 +22,7 @@ Inside the downloaded script lies the actual malware code—our flag.
 
 I opened `artifact.ps1` and immediately noticed a Base64-encoded string being executed with `powershell.exe -EncodedCommand`.  
 
-[NOTE]
-....
-The source code of the script can be downloaded attachment:thorins-amulet/files/artifact.ps1[here].
-....
+_The source code of the script can be downloaded attachment:thorins-amulet/files/artifact.ps1[here]._
 
 As I do not like running scripts without checking them first, I opened the script in a text editor:
 
@@ -109,10 +103,7 @@ So, the script is attempting to download another payload from `http://korp.htb/u
 
 === Fetching the Second Script
 
-[NOTE]
-....
-The source code of `update.ps1` can be downloaded attachment:thorins-amulet/files/update.ps1[here].
-....
+_The source code of `update.ps1` can be downloaded attachment:thorins-amulet/files/update.ps1[here]._
 
 .update.ps1
 [, powershell]
@@ -140,10 +131,7 @@ Now, let’s check out `a541a.ps1`.
 
 == Reconstruction
 
-[NOTE]
-....
-The source code of `a541a.ps1` can be downloaded attachment:thorins-amulet/files/a541a.ps1[here].
-....
+_The source code of `a541a.ps1` can be downloaded attachment:thorins-amulet/files/a541a.ps1[here]._
 
 This is the entire `a541a.ps1` script:
 
