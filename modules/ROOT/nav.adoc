@@ -6,6 +6,7 @@
 [crackmes.one]
 * xref:crackmes.one:index.adoc[]
 ** xref:crackmes.one:crackme2-be-D4RK_FL0W/crackme2-be-D4RK_FL0W.adoc[]
+** xref:crackmes.one:Crack3-by-D4RK_FL0W/Crack3-by-D4RK_FL0W.adoc[]
 ** xref:crackmes.one:keyg3nme/keyg3nme.adoc[]
 
 [HackTheBox]
@@ -14,6 +15,8 @@
 *** Linux
 **** xref:HackTheBox:bizness.adoc[]
 **** xref:HackTheBox:perfection.adoc[]
+*** Windows
+**** xref:HackTheBox:cicada.adoc[]
 ** Challenges
 *** Hardware
 **** xref:HackTheBox:photon_lockdown.adoc[]
