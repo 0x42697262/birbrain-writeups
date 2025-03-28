@@ -23,9 +23,10 @@
 *** Mobile
 **** xref:HackTheBox:cat.adoc[]
 ** Capture The Flag
-*** Forensics
-**** xref:HackTheBox:thorins-amulet.adoc[]
-**** xref:HackTheBox:a-new-hire.adoc[]
+*** Cyber Apocalypse CTF 2025: Tales from Eldoria
+**** Forensics
+***** xref:HackTheBox:a-new-hire.adoc[]
+***** xref:HackTheBox:thorins-amulet.adoc[]
 
 
 [Root-Me]
