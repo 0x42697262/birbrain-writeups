@@ -25,6 +25,7 @@
 ** Capture The Flag
 *** Forensics
 **** xref:HackTheBox:thorins-amulet.adoc[]
+**** xref:HackTheBox:a-new-hire.adoc[]
 
 
 [Root-Me]
