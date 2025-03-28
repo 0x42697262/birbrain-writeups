@@ -142,7 +142,7 @@ This payload executes two actions:
 . **Opens `resume_official.pdf`** – Likely a decoy document.
 . **Executes `client.py`** – A Python script hosted on the remote server.
 
-== Examining the Malware
+=== Examining the Malware
 
 Downloading both files:
 
@@ -154,6 +154,8 @@ Downloading both files:
 Download the resume: xref:attachment$a-new-hire/resume_official.pdf[resume_official.pdf]
 Download the python script: xref:attachment$a-new-hire/client.py[client.py]
 ====
+
+== Decoding The Flag
 
 The Python script contains a Base64-encoded key and an encrypted payload but due to the size of the script, I won't be including the encrypted binary snippet.
 
