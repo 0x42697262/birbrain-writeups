@@ -1,0 +1,10 @@
+= Cyber Apocalypse
+
+== Cyber Apocalypse CTF 2025: Tales from Eldoria
+
+[%header, format=csv]
+|===
+Category, Writeup
+Forensics, xref:HackTheBox:a-new-hire.adoc[]
+Forensics, xref:HackTheBox:thorins-amulet.adoc[]
+|===
