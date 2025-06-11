@@ -1,0 +1,720 @@
+= Crack3-by-D4RK_FL0W
+:tip-caption: 💡
+
+Author:: 0x42697262
+Play Date:: 2024/11/14 - 2025/06/12
+
+.https://crackmes.one/crackme/5ca0b3f833c5d4419da5567a[D4RKFL0W's Crack3-by-D4RK_FL0W]
+****
+Author:: D4RKFL0W
+Language:: C/C++
+Upload:: 12:35 PM 03/31/2019
+Platform:: Unix/linux etc.
+Difficulty:: 2.0
+Quality:: 4.0
+Arch:: x86-64
+Description:: 3'rd in the series, slightly increased difficulty. As always any feedback in appreciated an will be taken into account for my next one.
+****
+
+== Environment Setup
+
+Host:: Arch Linux
+Tools:: Ghidra, gef, strings, file, objdump
+
+== Running
+
+Running this binary once should provide me rough idea about the process.
+
+image::Crack3-by-D4RK_FL0W/running.png["./crack3-by-D4RK_FL0W"]
+
+
+Yep, this is good enough.
+
+
+== Static Analysis
+
+First checked what type of binary the challenge is.
+
+.``$ file crack3-by-D4RK_FL0W ``
+----
+crack3-by-D4RK_FL0W: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0, BuildID[sha1]=ecf3e25e36bc7901a379caa258db6b5a90d35662, not stripped
+----
+
+This binary appears to take an integer input instead of a character.
+It may be based on digits of pi since some of the strings contains the word **pi**.
+
+.``$ strings crack3-by-D4RK_FL0W``
+----
+/lib64/ld-linux-x86-64.so.2
+libstdc++.so.6
+__gmon_start__
+_ITM_deregisterTMCloneTable
+_ITM_registerTMCloneTable
+_ZNSt8ios_base4InitD1Ev
+_ZNSolsEPFRSoS_E
+_ZNSirsERi
+_ZSt4endlIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_
+_ZNSt8ios_base4InitC1Ev
+_ZSt3cin
+_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc
+_ZSt4cout
+_ZNSolsEi
+libm.so.6
+libgcc_s.so.1
+libc.so.6
+__cxa_atexit
+__cxa_finalize
+__libc_start_main
+GLIBCXX_3.4
+GLIBC_2.2.5
+u/UH
+[]A\A]A^A_
+Please Enter The Passcode:
+WRONG
+You Did It.
+Enter Digit 
+;*3$"
+GCC: (Debian 8.2.0-20) 8.2.0
+crtstuff.c
+deregister_tm_clones
+__do_global_dtors_aux
+completed.7325
+__do_global_dtors_aux_fini_array_entry
+frame_dummy
+__frame_dummy_init_array_entry
+crack3-by-D4RK_FL0W.cpp
+_ZStL19piecewise_construct
+_ZStL8__ioinit
+_Z41__static_initialization_and_destruction_0ii
+_GLOBAL__sub_I_p1
+__FRAME_END__
+__GNU_EH_FRAME_HDR
+_DYNAMIC
+__init_array_end
+__init_array_start
+_GLOBAL_OFFSET_TABLE_
+_edata
+_Z8get_codev
+_IO_stdin_used
+__cxa_finalize@@GLIBC_2.2.5
+_Z9get_digitPii
+main
+_ZSt4endlIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_@@GLIBCXX_3.4
+__dso_handle
+code
+_ZNSirsERi@@GLIBCXX_3.4
+__cxa_atexit@@GLIBC_2.2.5
+_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@@GLIBCXX_3.4
+_ZNSolsEPFRSoS_E@@GLIBCXX_3.4
+__TMC_END__
+_ZSt4cout@@GLIBCXX_3.4
+__data_start
+__bss_start
+_ZNSt8ios_base4InitC1Ev@@GLIBCXX_3.4
+_Z10check_codePi
+__libc_csu_init
+_ZNSolsEi@@GLIBCXX_3.4
+_ITM_deregisterTMCloneTable
+__libc_csu_fini
+_ZSt3cin@@GLIBCXX_3.4
+__libc_start_main@@GLIBC_2.2.5
+__gmon_start__
+_ITM_registerTMCloneTable
+_ZNSt8ios_base4InitD1Ev@@GLIBCXX_3.4
+.symtab
+.strtab
+.shstrtab
+.interp
+.note.ABI-tag
+.note.gnu.build-id
+.gnu.hash
+.dynsym
+.dynstr
+.gnu.version
+.gnu.version_r
+.rela.dyn
+.rela.plt
+.init
+.plt.got
+.text
+.fini
+.rodata
+.eh_frame_hdr
+.eh_frame
+.init_array
+.fini_array
+.dynamic
+.got.plt
+.data
+.bss
+.comment
+----
+
+I guess the code, secret key, or flag is never stored as a string...
+
+As always, I like dumping the instruction operations of the binary.
+
+.``$ objdump -r -M intel -d crack2-by-D4RK_FL0W``
+----
+0000000000001195 <main>:
+    1195:	55                   	push   rbp
+    1196:	48 89 e5             	mov    rbp,rsp
+    1199:	48 83 ec 10          	sub    rsp,0x10
+    119d:	48 8d 35 61 0e 00 00 	lea    rsi,[rip+0xe61]        # 2005 <_ZStL19piecewise_construct+0x1>
+    11a4:	48 8d 3d d5 2f 00 00 	lea    rdi,[rip+0x2fd5]        # 4180 <_ZSt4cout@GLIBCXX_3.4>
+    11ab:	e8 a0 fe ff ff       	call   1050 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+    11b0:	48 89 c2             	mov    rdx,rax
+    11b3:	48 8b 05 16 2e 00 00 	mov    rax,QWORD PTR [rip+0x2e16]        # 3fd0 <_ZSt4endlIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_@GLIBCXX_3.4>
+    11ba:	48 89 c6             	mov    rsi,rax
+    11bd:	48 89 d7             	mov    rdi,rdx
+    11c0:	e8 9b fe ff ff       	call   1060 <_ZNSolsEPFRSoS_E@plt>
+    11c5:	e8 5f 01 00 00       	call   1329 <_Z8get_codev>
+    11ca:	48 89 45 f0          	mov    QWORD PTR [rbp-0x10],rax
+    11ce:	48 8d 3d eb 31 00 00 	lea    rdi,[rip+0x31eb]        # 43c0 <code>
+    11d5:	e8 8b 00 00 00       	call   1265 <_Z10check_codePi>
+    11da:	83 f0 01             	xor    eax,0x1
+    11dd:	84 c0                	test   al,al
+    11df:	74 1d                	je     11fe <main+0x69>
+    11e1:	48 8d 35 38 0e 00 00 	lea    rsi,[rip+0xe38]        # 2020 <_ZStL19piecewise_construct+0x1c>
+    11e8:	48 8d 3d 91 2f 00 00 	lea    rdi,[rip+0x2f91]        # 4180 <_ZSt4cout@GLIBCXX_3.4>
+    11ef:	e8 5c fe ff ff       	call   1050 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+    11f4:	bf 00 00 00 00       	mov    edi,0x0
+    11f9:	e8 72 fe ff ff       	call   1070 <exit@plt>
+    11fe:	48 8d 35 23 0e 00 00 	lea    rsi,[rip+0xe23]        # 2028 <_ZStL19piecewise_construct+0x24>
+    1205:	48 8d 3d 74 2f 00 00 	lea    rdi,[rip+0x2f74]        # 4180 <_ZSt4cout@GLIBCXX_3.4>
+    120c:	e8 3f fe ff ff       	call   1050 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+    1211:	c7 45 fc 00 00 00 00 	mov    DWORD PTR [rbp-0x4],0x0
+    1218:	83 7d fc 03          	cmp    DWORD PTR [rbp-0x4],0x3
+    121c:	7f 2a                	jg     1248 <main+0xb3>
+    121e:	8b 45 fc             	mov    eax,DWORD PTR [rbp-0x4]
+    1221:	48 98                	cdqe
+    1223:	48 8d 14 85 00 00 00 	lea    rdx,[rax*4+0x0]
+    122a:	00 
+    122b:	48 8b 45 f0          	mov    rax,QWORD PTR [rbp-0x10]
+    122f:	48 01 d0             	add    rax,rdx
+    1232:	8b 00                	mov    eax,DWORD PTR [rax]
+    1234:	89 c6                	mov    esi,eax
+    1236:	48 8d 3d 43 2f 00 00 	lea    rdi,[rip+0x2f43]        # 4180 <_ZSt4cout@GLIBCXX_3.4>
+    123d:	e8 4e fe ff ff       	call   1090 <_ZNSolsEi@plt>
+    1242:	83 45 fc 01          	add    DWORD PTR [rbp-0x4],0x1
+    1246:	eb d0                	jmp    1218 <main+0x83>
+    1248:	48 8b 05 81 2d 00 00 	mov    rax,QWORD PTR [rip+0x2d81]        # 3fd0 <_ZSt4endlIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_@GLIBCXX_3.4>
+    124f:	48 89 c6             	mov    rsi,rax
+    1252:	48 8d 3d 27 2f 00 00 	lea    rdi,[rip+0x2f27]        # 4180 <_ZSt4cout@GLIBCXX_3.4>
+    1259:	e8 02 fe ff ff       	call   1060 <_ZNSolsEPFRSoS_E@plt>
+    125e:	b8 00 00 00 00       	mov    eax,0x0
+    1263:	c9                   	leave
+    1264:	c3                   	ret
+
+0000000000001265 <_Z10check_codePi>:
+    1265:	55                   	push   rbp
+    1266:	48 89 e5             	mov    rbp,rsp
+    1269:	53                   	push   rbx
+    126a:	48 83 ec 18          	sub    rsp,0x18
+    126e:	48 89 7d e8          	mov    QWORD PTR [rbp-0x18],rdi
+    1272:	48 8b 45 e8          	mov    rax,QWORD PTR [rbp-0x18]
+    1276:	8b 18                	mov    ebx,DWORD PTR [rax]
+    1278:	be 0a 00 00 00       	mov    esi,0xa
+    127d:	48 8d 3d fc 2d 00 00 	lea    rdi,[rip+0x2dfc]        # 4080 <p1>
+    1284:	e8 32 01 00 00       	call   13bb <_Z9get_digitPii>
+    1289:	39 c3                	cmp    ebx,eax
+    128b:	0f 95 c0             	setne  al
+    128e:	84 c0                	test   al,al
+    1290:	74 0a                	je     129c <_Z10check_codePi+0x37>
+    1292:	b8 00 00 00 00       	mov    eax,0x0
+    1297:	e9 86 00 00 00       	jmp    1322 <_Z10check_codePi+0xbd>
+    129c:	48 8b 45 e8          	mov    rax,QWORD PTR [rbp-0x18]
+    12a0:	48 83 c0 04          	add    rax,0x4
+    12a4:	8b 18                	mov    ebx,DWORD PTR [rax]
+    12a6:	be 0a 00 00 00       	mov    esi,0xa
+    12ab:	48 8d 3d 0e 2e 00 00 	lea    rdi,[rip+0x2e0e]        # 40c0 <p2>
+    12b2:	e8 04 01 00 00       	call   13bb <_Z9get_digitPii>
+    12b7:	39 c3                	cmp    ebx,eax
+    12b9:	0f 95 c0             	setne  al
+    12bc:	84 c0                	test   al,al
+    12be:	74 07                	je     12c7 <_Z10check_codePi+0x62>
+    12c0:	b8 00 00 00 00       	mov    eax,0x0
+    12c5:	eb 5b                	jmp    1322 <_Z10check_codePi+0xbd>
+    12c7:	48 8b 45 e8          	mov    rax,QWORD PTR [rbp-0x18]
+    12cb:	48 83 c0 08          	add    rax,0x8
+    12cf:	8b 18                	mov    ebx,DWORD PTR [rax]
+    12d1:	be 0a 00 00 00       	mov    esi,0xa
+    12d6:	48 8d 3d 23 2e 00 00 	lea    rdi,[rip+0x2e23]        # 4100 <p3>
+    12dd:	e8 d9 00 00 00       	call   13bb <_Z9get_digitPii>
+    12e2:	39 c3                	cmp    ebx,eax
+    12e4:	0f 95 c0             	setne  al
+    12e7:	84 c0                	test   al,al
+    12e9:	74 07                	je     12f2 <_Z10check_codePi+0x8d>
+    12eb:	b8 00 00 00 00       	mov    eax,0x0
+    12f0:	eb 30                	jmp    1322 <_Z10check_codePi+0xbd>
+    12f2:	48 8b 45 e8          	mov    rax,QWORD PTR [rbp-0x18]
+    12f6:	48 83 c0 0c          	add    rax,0xc
+    12fa:	8b 18                	mov    ebx,DWORD PTR [rax]
+    12fc:	be 0a 00 00 00       	mov    esi,0xa
+    1301:	48 8d 3d 38 2e 00 00 	lea    rdi,[rip+0x2e38]        # 4140 <p4>
+    1308:	e8 ae 00 00 00       	call   13bb <_Z9get_digitPii>
+    130d:	39 c3                	cmp    ebx,eax
+    130f:	0f 95 c0             	setne  al
+    1312:	84 c0                	test   al,al
+    1314:	74 07                	je     131d <_Z10check_codePi+0xb8>
+    1316:	b8 00 00 00 00       	mov    eax,0x0
+    131b:	eb 05                	jmp    1322 <_Z10check_codePi+0xbd>
+    131d:	b8 01 00 00 00       	mov    eax,0x1
+    1322:	48 83 c4 18          	add    rsp,0x18
+    1326:	5b                   	pop    rbx
+    1327:	5d                   	pop    rbp
+    1328:	c3                   	ret
+
+0000000000001329 <_Z8get_codev>:
+    1329:	55                   	push   rbp
+    132a:	48 89 e5             	mov    rbp,rsp
+    132d:	48 83 ec 10          	sub    rsp,0x10
+    1331:	c7 45 fc 00 00 00 00 	mov    DWORD PTR [rbp-0x4],0x0
+    1338:	83 7d fc 03          	cmp    DWORD PTR [rbp-0x4],0x3
+    133c:	7f 74                	jg     13b2 <_Z8get_codev+0x89>
+    133e:	48 8d 35 f1 0c 00 00 	lea    rsi,[rip+0xcf1]        # 2036 <_ZStL19piecewise_construct+0x32>
+    1345:	48 8d 3d 34 2e 00 00 	lea    rdi,[rip+0x2e34]        # 4180 <_ZSt4cout@GLIBCXX_3.4>
+    134c:	e8 ff fc ff ff       	call   1050 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+    1351:	48 89 c2             	mov    rdx,rax
+    1354:	8b 45 fc             	mov    eax,DWORD PTR [rbp-0x4]
+    1357:	83 c0 01             	add    eax,0x1
+    135a:	89 c6                	mov    esi,eax
+    135c:	48 89 d7             	mov    rdi,rdx
+    135f:	e8 2c fd ff ff       	call   1090 <_ZNSolsEi@plt>
+    1364:	48 8d 35 d8 0c 00 00 	lea    rsi,[rip+0xcd8]        # 2043 <_ZStL19piecewise_construct+0x3f>
+    136b:	48 89 c7             	mov    rdi,rax
+    136e:	e8 dd fc ff ff       	call   1050 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+    1373:	8b 45 fc             	mov    eax,DWORD PTR [rbp-0x4]
+    1376:	48 98                	cdqe
+    1378:	48 8d 14 85 00 00 00 	lea    rdx,[rax*4+0x0]
+    137f:	00 
+    1380:	48 8d 05 39 30 00 00 	lea    rax,[rip+0x3039]        # 43c0 <code>
+    1387:	48 01 d0             	add    rax,rdx
+    138a:	48 89 c6             	mov    rsi,rax
+    138d:	48 8d 3d 0c 2f 00 00 	lea    rdi,[rip+0x2f0c]        # 42a0 <_ZSt3cin@GLIBCXX_3.4>
+    1394:	e8 97 fc ff ff       	call   1030 <_ZNSirsERi@plt>
+    1399:	48 8d 35 a6 0c 00 00 	lea    rsi,[rip+0xca6]        # 2046 <_ZStL19piecewise_construct+0x42>
+    13a0:	48 8d 3d d9 2d 00 00 	lea    rdi,[rip+0x2dd9]        # 4180 <_ZSt4cout@GLIBCXX_3.4>
+    13a7:	e8 a4 fc ff ff       	call   1050 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+    13ac:	83 45 fc 01          	add    DWORD PTR [rbp-0x4],0x1
+    13b0:	eb 86                	jmp    1338 <_Z8get_codev+0xf>
+    13b2:	48 8d 05 07 30 00 00 	lea    rax,[rip+0x3007]        # 43c0 <code>
+    13b9:	c9                   	leave
+    13ba:	c3                   	ret
+
+00000000000013bb <_Z9get_digitPii>:
+    13bb:	55                   	push   rbp
+    13bc:	48 89 e5             	mov    rbp,rsp
+    13bf:	48 89 7d e8          	mov    QWORD PTR [rbp-0x18],rdi
+    13c3:	89 75 e4             	mov    DWORD PTR [rbp-0x1c],esi
+    13c6:	c7 45 fc 00 00 00 00 	mov    DWORD PTR [rbp-0x4],0x0
+    13cd:	c7 45 f8 00 00 00 00 	mov    DWORD PTR [rbp-0x8],0x0
+    13d4:	c7 45 f4 00 00 00 00 	mov    DWORD PTR [rbp-0xc],0x0
+    13db:	8b 45 f4             	mov    eax,DWORD PTR [rbp-0xc]
+    13de:	3b 45 e4             	cmp    eax,DWORD PTR [rbp-0x1c]
+    13e1:	7d 52                	jge    1435 <_Z9get_digitPii+0x7a>
+    13e3:	8b 45 f4             	mov    eax,DWORD PTR [rbp-0xc]
+    13e6:	48 98                	cdqe
+    13e8:	48 8d 14 85 00 00 00 	lea    rdx,[rax*4+0x0]
+    13ef:	00 
+    13f0:	48 8b 45 e8          	mov    rax,QWORD PTR [rbp-0x18]
+    13f4:	48 01 d0             	add    rax,rdx
+    13f7:	8b 00                	mov    eax,DWORD PTR [rax]
+    13f9:	23 45 fc             	and    eax,DWORD PTR [rbp-0x4]
+    13fc:	09 45 f8             	or     DWORD PTR [rbp-0x8],eax
+    13ff:	8b 45 f4             	mov    eax,DWORD PTR [rbp-0xc]
+    1402:	48 98                	cdqe
+    1404:	48 8d 14 85 00 00 00 	lea    rdx,[rax*4+0x0]
+    140b:	00 
+    140c:	48 8b 45 e8          	mov    rax,QWORD PTR [rbp-0x18]
+    1410:	48 01 d0             	add    rax,rdx
+    1413:	8b 00                	mov    eax,DWORD PTR [rax]
+    1415:	31 45 fc             	xor    DWORD PTR [rbp-0x4],eax
+    1418:	8b 45 fc             	mov    eax,DWORD PTR [rbp-0x4]
+    141b:	23 45 f8             	and    eax,DWORD PTR [rbp-0x8]
+    141e:	f7 d0                	not    eax
+    1420:	89 45 f0             	mov    DWORD PTR [rbp-0x10],eax
+    1423:	8b 45 f0             	mov    eax,DWORD PTR [rbp-0x10]
+    1426:	21 45 fc             	and    DWORD PTR [rbp-0x4],eax
+    1429:	8b 45 f0             	mov    eax,DWORD PTR [rbp-0x10]
+    142c:	21 45 f8             	and    DWORD PTR [rbp-0x8],eax
+    142f:	83 45 f4 01          	add    DWORD PTR [rbp-0xc],0x1
+    1433:	eb a6                	jmp    13db <_Z9get_digitPii+0x20>
+    1435:	8b 45 fc             	mov    eax,DWORD PTR [rbp-0x4]
+    1438:	5d                   	pop    rbp
+    1439:	c3                   	ret
+----
+
+I didn't add ``--visualize-jumps=color`` to the command but this should make looking at the dumps easier.
+
+Notice that the ``main`` function calls **2** functions: ``get_code`` and ``check_codePi``.
+``check_codePi`` seems to call itself and another function ``get_digit_Pii``.
+
+== Dynamic Analysis
+
+Okay, at this point, I have no idea what do I do with the dump.
+I can't even read assembly instructions yet.
+
+So, I fired up Ghidra.
+
+=== Ghidra
+
+Luckily, our binary isn't **stripped** so every symbols was present in our eyes.
+In the real world, binaries are stripped from its symbols.
+
+I went over to its entry point function(?) and viewed its decompiled code:
+
+
+==== main()
+
+.main()
+[, c]
+----
+
+undefined8 main(void)
+
+{
+  char success;
+  basic_ostream *this;
+  long was_this_ever_used;
+  int local_c;
+  
+  this = std::operator<<((basic_ostream *)std::cout,"Please Enter The Passcode:");
+  std::basic_ostream<>::operator<<((basic_ostream<> *)this,std::endl<>);
+  was_this_ever_used = get_code();
+  success = check_code((int *)code);
+  if (success != '\x01') { <.>
+    std::operator<<((basic_ostream *)std::cout,"\nWRONG\n");
+                    /* WARNING: Subroutine does not return */
+    exit(0);
+  }
+  std::operator<<((basic_ostream *)std::cout,"\nYou Did It.\n");
+  for (local_c = 0; local_c < 4; local_c = local_c + 1) {
+    std::basic_ostream<>::operator<<
+              ((basic_ostream<> *)std::cout,*(int *)(was_this_ever_used + (long)local_c * 4));
+  }
+  std::basic_ostream<>::operator<<((basic_ostream<> *)std::cout,std::endl<>);
+  return 0;
+}
+----
+<.> Checks for a string value of **1** if verified
+
+I have already made changes with the labels in Ghidra to make things easier.
+
+I checked each functions first.
+
+Nothing much going on with ``get_code()`` function as it only writes text to stdout and grab your 1 digit input four times.
+
+==== get_code()
+
+.get_code()
+[, c]
+----
+undefined1 * get_code(void)
+
+{
+  basic_ostream *pbVar1;
+  int i;
+  
+  for (i = 0; i < 4; i = i + 1) {
+    pbVar1 = std::operator<<((basic_ostream *)std::cout,"Enter Digit ");
+    pbVar1 = (basic_ostream *)std::basic_ostream<>::operator<<((basic_ostream<> *)pbVar1,i + 1);
+    std::operator<<(pbVar1,": ");
+    std::basic_istream<>::operator>>((basic_istream<> *)std::cin,(int *)(code + (long)i * 4));
+    std::operator<<((basic_ostream *)std::cout,"\n");
+  }
+  return code;
+}
+----
+
+Looks like the variable ``code`` is a global variable since it wasn't really passed through a function.
+
+Our next piece of code is the ``check_code`` function.
+It checks the four inputs by verifying it.
+
+
+==== check_code()
+
+
+.check_code()
+[,c]
+----
+undefined8 check_code(int *code_input)
+
+{
+  int code;
+  undefined8 success;
+  int digit;
+  
+  digit = *code_input;
+  code = get_digit((int *)p1,10);
+  if (digit == code) {
+    digit = code_input[1];
+    code = get_digit((int *)p2,10);
+    if (digit == code) {
+      digit = code_input[2];
+      code = get_digit((int *)p3,10);
+      if (digit == code) {
+        digit = code_input[3];
+        code = get_digit((int *)p4,10);
+        if (digit == code) {
+          success = 1;
+        }
+        else {
+          success = 0;
+        }
+      }
+      else {
+        success = 0;
+      }
+    }
+    else {
+      success = 0;
+    }
+  }
+  else {
+    success = 0;
+  }
+  return success;
+}
+----
+
+
+Nothing much important around here.
+This function simply calls another function that actually do the verification.
+
+Oh, do notice that when your input code is verified, this function returns a **1**.
+
+Which is weird because the return value is an integer.
+Yet, the one in the ``main()`` function checks for a string: ``\x01``.
+
+It's like, you're intended to fail the verification....
+
+
+But I am going to ignore that for now and proceed to the juicy function: **get_digit**
+
+
+==== get_digit()
+
+.get_digit()
+[,c]
+----
+uint get_digit(int *p,int base)
+
+{
+  uint _xor;
+  int i;
+  uint temp;
+  uint decrypted_value;
+  
+  decrypted_value = 0;
+  temp = 0;
+  for (i = 0; i < base; i = i + 1) {
+    temp = temp | p[i] & decrypted_value;
+    _xor = ~((decrypted_value ^ p[i]) & temp);
+    decrypted_value = (decrypted_value ^ p[i]) & _xor;
+    temp = temp & _xor;
+  }
+  return decrypted_value;
+}
+----
+
+I do not really understand how everything here works however I can see that it's trying to iterate over an array of integer ``p`` and do bitwise operation.
+
+I don't need to know the process here.
+What I need is its return value.
+
+Baed on the previous function (its caller), there are 4 variables stored somewhere in the binary.
+So I took them and wrote a python script that decrypts those 4 arrays.
+
+[, python]
+----
+p1 = [ 0x01, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, ]
+p2 = [ 0x0a, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x46, 0x00, 0x00, 0x00, 0x46, 0x00, 0x00, 0x00, 0x46, 0x00, 0x00, 0x00, 0x23, 0x00, 0x00, 0x00, 0x23, 0x00, 0x00, 0x00, 0x23, 0x00, 0x00, 0x00, ]
+p3 = [ 0x07, 0x00, 0x00, 0x00, 0x44, 0x00, 0x00, 0x00, 0x44, 0x00, 0x00, 0x00, 0x44, 0x00, 0x00, 0x00, 0x17, 0x00, 0x00, 0x00, 0x17, 0x00, 0x00, 0x00, 0x17, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, ]
+p4 = [ 0x04, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, ]
+
+def get_digit(p, base):
+    decrypted_value = 0
+    temp = 0
+
+    _xor = 0
+    for i in range(0, base):
+        temp                = (temp | p[i] & decrypted_value) & 0xFFFFFFFF
+        _xor                = (~((decrypted_value ^ p[i]) & temp)) & 0xFFFFFFFF
+        decrypted_value     = ((decrypted_value ^ p[i]) & _xor) & 0xFFFFFFFF
+        temp                = (temp & _xor) & 0xFFFFFFFF
+
+    return decrypted_value
+
+print(get_digit(p1, 10))
+print(get_digit(p2, 10))
+print(get_digit(p3, 10))
+print(get_digit(p4, 10))
+----
+
+I added the mask ``0xFFFFFFFF`` since the variables in the decompiled code are instantiated with 32-bit unsigned integer.
+
+After running the script, we got the value ``2034``!
+
+image::Crack3-by-D4RK_FL0W/script.png["Running the Python script"]
+
+I hurriedly used the code to the binary and only to be disappointed.
+Then, I remembered from a while ago the ``main`` function has a check if the return value was an integer or a string.
+
+
+image::Crack3-by-D4RK_FL0W/2034.png["2034"]
+
+
+I fired up **gdb** with GEF plugin installed.
+
+=== gdb (GEF)
+
+Ran the binary with gdb: ``gdb crack3-by-D4RK_FL0W``. 
+
+.disas /r main
+----
+gef➤  disas /r main 
+Dump of assembler code for function main:
+   0x0000000000001195 <+0>:	55                 	push   rbp
+   0x0000000000001196 <+1>:	48 89 e5           	mov    rbp,rsp
+   0x0000000000001199 <+4>:	48 83 ec 10        	sub    rsp,0x10
+   0x000000000000119d <+8>:	48 8d 35 61 0e 00 00	lea    rsi,[rip+0xe61]        # 0x2005
+   0x00000000000011a4 <+15>:	48 8d 3d d5 2f 00 00	lea    rdi,[rip+0x2fd5]        # 0x4180 <_ZSt4cout@@GLIBCXX_3.4>
+   0x00000000000011ab <+22>:	e8 a0 fe ff ff     	call   0x1050 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+   0x00000000000011b0 <+27>:	48 89 c2           	mov    rdx,rax
+   0x00000000000011b3 <+30>:	48 8b 05 16 2e 00 00	mov    rax,QWORD PTR [rip+0x2e16]        # 0x3fd0
+   0x00000000000011ba <+37>:	48 89 c6           	mov    rsi,rax
+   0x00000000000011bd <+40>:	48 89 d7           	mov    rdi,rdx
+   0x00000000000011c0 <+43>:	e8 9b fe ff ff     	call   0x1060 <_ZNSolsEPFRSoS_E@plt>
+   0x00000000000011c5 <+48>:	e8 5f 01 00 00     	call   0x1329 <_Z8get_codev>
+   0x00000000000011ca <+53>:	48 89 45 f0        	mov    QWORD PTR [rbp-0x10],rax
+   0x00000000000011ce <+57>:	48 8d 3d eb 31 00 00	lea    rdi,[rip+0x31eb]        # 0x43c0 <code>
+   0x00000000000011d5 <+64>:	e8 8b 00 00 00     	call   0x1265 <_Z10check_codePi>
+   0x00000000000011da <+69>:	83 f0 01           	xor    eax,0x1
+   0x00000000000011dd <+72>:	84 c0              	test   al,al
+   0x00005555555551df <+74>:	74 1d              	je     0x5555555551fe <main+105>
+   0x00005555555551e1 <+76>:	48 8d 35 38 0e 00 00	lea    rsi,[rip+0xe38]        # 0x555555556020
+   ...
+----
+
+What I needed to take note of is to patch the part at the ``main`` function:
+
+.Checks if success is string value of 1
+[,c]
+----
+if (success != '\x01') {
+std::operator<<((basic_ostream *)std::cout,"\nWRONG\n");
+                /* WARNING: Subroutine does not return */
+exit(0);
+}
+----
+
+And this is equivalent to this in Ghidra.
+
+.Assembly instruction of the code above
+----
+...
+001011dd 84 c0           TEST       success,success
+001011df 74 1d           JZ         LAB_001011fe
+001011e1 48 8d 35        LEA        RSI,[s__WRONG_00102020]                          = "\nWRONG\n"
+            38 0e 00 00
+001011e8 48 8d 3d        LEA        RDI,[std::cout]
+            91 2f 00 00
+001011ef e8 5c fe        CALL       <EXTERNAL>::std::operator<<                      basic_ostream * operator<<(basic
+            ff ff
+001011f4 bf 00 00        MOV        EDI,0x0
+            00 00
+001011f9 e8 72 fe        CALL       <EXTERNAL>::exit                                 void exit(int __status)
+            ff ff
+                        -- Flow Override: CALL_RETURN (CALL_TERMINATOR)
+...
+----
+
+I need to modify the **TEST** instruction in gdb.
+
+.TEST instruction
+----
+0x00000000000011dd <+72>:	84 c0              	test   al,al
+----
+
+So, I ran the code, terminated it, then added a breakpoint to it.
+
+Either use one of these two.
+
+.Option 1
+----
+breakpoint *main+72
+----
+
+or
+
+.Option 2
+----
+breakpoint *0x00000000000011dd
+----
+
+**Option 1** probably doesn't work on stripped binaries.
+But **Option 2** is universal.
+
+
+Next thing to do is to run the binary, input the 4 codes I got earlier, then gdb will stumble on the breakpoint address.
+
+image::Crack3-by-D4RK_FL0W/breakpoint.png["Breakpoint at TEST"]
+
+Something I have asked from ChatGPT (i was lazy on checking the references) that it's possible to set the **ZF** (Zero-Flag) value to 1 (iirc?) so that the next instruction will be executed.
+Alternatively, it's possible to jump on the specific address.
+
+I want to jump to this next intruction:
+
+.je
+----
+0x00005555555551df <+74>:	74 1d              	je     0x5555555551fe <main+105>
+----
+
+Which will jump over to the next piece of code:
+
+
+[, c]
+----
+std::operator<<((basic_ostream *)std::cout,"\nYou Did It.\n");
+----
+
+Equivalent to the assembly code below (from main):
+
+.assembly instruction
+----
+0x00005555555551fe <+105>:	48 8d 35 23 0e 00 00	lea    rsi,[rip+0xe23]        # 0x555555556028
+0x0000555555555205 <+112>:	48 8d 3d 74 2f 00 00	lea    rdi,[rip+0x2f74]        # 0x555555558180 <_ZSt4cout@@GLIBCXX_3.4>
+0x000055555555520c <+119>:	e8 3f fe ff ff     	call   0x555555555050 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+0x0000555555555211 <+124>:	c7 45 fc 00 00 00 00	mov    DWORD PTR [rbp-0x4],0x0
+----
+
+Thus, I proceed to set the value of ``$al`` to **0** and continued running the binary.
+
+image::Crack3-by-D4RK_FL0W/win.png["You WIN"]
+
+And that's it!
+
+***The Explanation***
+
+Why **ZF=1**?
+Because the **TEST** instruction will only execute the next instruction if the value is **1**.
+
+Why set **$al=0**?
+Because currently its value is **1**.
+The Zero-Flag will only be set to 1 if **al** is 0.
+
+== Conclusion
+
+I probably need to read the documentation and references of Intel assembly instructions so that I won't rely on using ChatGPT as my search engine next time.
+
+This is what ChatGPT said and just exactl what I need for setting the jump conditions naturally (without skipping):
+
+----
+set $al = 1     # ZF = 0 → jump NOT taken
+set $al = 0     # ZF = 1 → jump taken
+----
+
+
+_Why did this challenge took me 7 months? It's because I got lazy and forgot about this challenge._
