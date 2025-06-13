@@ -1,0 +1,182 @@
+= SpookyPass
+
+Author:: 0x42697262
+Category:: Reversing
+Difficulty:: Very Easy
+Play Date:: 2025/06/13 - 2025/06/13
+
+== Details
+
+.Challenge Description
+****
+All the coolest ghosts in town are going to a Haunted Houseparty - can you prove you deserve to get in?
+****
+
+
+There is only 1 file in this challenge.
+
+----
+$ ls
+-rwxr-xr-x 1 chicken chicken 15912 Oct  4  2024 pass*
+----
+
+What to expect?
+
+. Very easy challenge, no need to think about it
+. The password is encoded as a string in the unstripped binary
+
+This should be enough as an overview for this challenge.
+
+== Solution
+
+I always tend to check the file type with ``file`` command.
+It doesnt do much but makes me feel I get a foothold or something.
+
+----
+$ file pass
+pass: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=3008217772cc2426c643d69b80a96c715490dd91, for GNU/Linux 4.4.0, not stripped
+----
+
+I noticed that it's an unstripped binary.
+Maybe we can get its function names and some strings.
+
+----
+$ strings pass
+...
+Welcome to the 
+[1;3mSPOOKIEST
+[0m party of the year.
+Before we let you in, you'll need to give us the password: 
+s3cr3t_p455_f0r_gh05t5_4nd_gh0ul5
+Welcome inside!
+You're not a real ghost; clear off!
+...
+----
+
+I redacted some of the unnecessary strings but we're off to a good start!
+
+Notice that there's some weird looking string *s3cr3t_p455_f0r_gh05t5_4nd_gh0ul5*.
+This might even be our password.
+
+So, I ran the binary and used that as the password.
+
+----
+$ ./pass 
+Welcome to the SPOOKIEST party of the year.
+Before we let you in, you'll need to give us the password: s3cr3t_p455_f0r_gh05t5_4nd_gh0ul5
+Welcome inside!
+HTB{<redacted>}
+----
+
+And voila!
+We got our flag!
+
+== Conclusion
+
+Yep, makes sense why this challenge is very easy.
+
+Okay, but that's it?
+This is all too boring.
+
+While I didn't learn something new in this challenge, I was able to be confident at solving very easy challenges.
+It's still far from peak like cracking serial license keys or able to create mods for a game.
+
+Why don't I actually _reverse engineer_ the binary for some extra challenge.
+
+
+== Extra Round
+
+Here is the decompiled assembly instruction of the main method:
+
+.main()
+[, c]
+----
+undefined8 main(void)
+{
+  int is_equal;
+  char *pcVar1;
+  long in_FS_OFFSET;
+  uint i;
+  undefined8 flag;
+  undefined2 local_b0;
+  undefined6 uStack_ae;
+  undefined2 uStack_a8;
+  undefined8 local_a6;
+  char user_input [136];
+  long local_10;
+  
+  local_10 = *(long *)(in_FS_OFFSET + 40);
+  flag = 0;
+  local_b0 = 0;
+  uStack_ae = 0;
+  uStack_a8 = 0;
+  local_a6 = 0;
+  puts("Welcome to the \x1b[1;3mSPOOKIEST\x1b[0m party of the year.");
+  printf("Before we let you in, you\'ll need to give us the password: ");
+  fgets(user_input,128,stdin);
+  pcVar1 = strchr(user_input,10);
+  if (pcVar1 != (char *)0) {
+    *pcVar1 = '\0';
+  }
+  is_equal = strcmp(user_input,"s3cr3t_p455_f0r_gh05t5_4nd_gh0ul5"); <.>
+  if (is_equal == 0) {
+    puts("Welcome inside!");
+    for (i = 0; i < 26; i = i + 1) {
+      *(char *)((long)&flag + (long)(int)i) = (char)*(undefined4 *)(parts + (long)(int)i * 4); <.>
+    }
+    puts((char *)&flag);
+  }
+  else {
+    puts("You\'re not a real ghost; clear off!");
+  }
+  if (local_10 != *(long *)(in_FS_OFFSET + 0x28)) {
+                    /* WARNING: Subroutine does not return */
+    __stack_chk_fail();
+  }
+  return 0;
+}
+----
+<.> It's the password, cool
+<.> This is where the flag is taken
+
+After I renamed some of the label names, I took interest at this expression:
+
+[,c]
+----
+for (i = 0; i < 26; i = i + 1) {
+  *(char *)((long)&flag + (long)(int)i) = (char)*(undefined4 *)(parts + (long)(int)i * 4); <.>
+}
+----
+
+There's quite a lot to decompose here but let me try to decompose them (disregarding C syntax).
+
+[,c]
+----
+for (i = 0; i < 26; i = i + 1) {
+  &flag + i = parts + i * 4;
+}
+----
+
+Alright, that should be more readable now, isn't it?
+
+Notice that the variable ``parts`` isn't written in the *main* function, that's because this data is stored in ``.data`` section of the binary.
+
+If it's not clear, what this loop does is set the value of ``flag`` at its index(?) based on the index of ``parts`` multiplied by 4.
+
+Wait, why is it multiplied by 4?
+
+Becase ``parts`` is stored as 4 bytes:
+
+----
+48 00 00 00 54 00 00 00 42 00 00 00 7b 00 00 00 75 00 00 00 6e 00 00 00 30 00 00 00 62 00 00 00 66 00 00 00 75 00 00 00 35 00 00 00 63 00 00 00 34 00 00 00 74 00 00 00 33 00 00 00 64 00 00 00 5f 00 00 00 35 00 00 00 74 00 00 00 72 00 00 00 31 00 00 00 6e 00 00 00 67 00 00 00 35 00 00 00 7d 00 00 00 00 00 00 00
+----
+
+Removing all the **00**'s, I was able to get 
+
+----
+48 54 42 7b 75 6e 30 62 66 75 35 63 34 74 33 64 5f 35 74 72 31 6e 67 35 7d
+----
+
+The hex representation of our flag! It's not encrypted at all.
+
+Thus, when decoded into plain text, we have our flag for submission.
