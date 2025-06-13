@@ -1,0 +1,158 @@
+= Crackme-4
+:tip-caption: 💡
+
+Author:: 0x42697262
+Play Date:: 2025/06/13 - 2025/06/13
+
+.https://crackmes.one/crackme/5e0fa43b33c5d419aa01351e[D4RKFL0W's Crackme-4]
+****
+Author:: D4RKFL0W
+Language:: C/C++
+Upload:: 8:29 PM 01/03/2020
+Platform:: Unix/linux etc.
+Difficulty:: 1.7
+Quality:: 4.7
+Arch:: x86-64
+Description:: Some simple obfuscation in this one.
+****
+
+== Steps
+
+=== file
+
+I always start with `file` out of habit:
+
+----
+$ file Crackme-4
+Crackme-4: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=4aef34e93a282bc5d5be68cd1319c78b63a55b0e, for GNU/Linux 3.2.0, not stripped
+----
+
+Confirmed it’s a 64-bit ELF unstripped binary.
+
+=== strings
+
+Ran `strings` to look for hardcoded password:
+
+----
+$ strings Crackme-4
+...
+GLIBCXX_3.4
+u/UH
+[]A\A]A^A_
+Sorry that is incorrect.
+Please enter the password: 
+That's CORRECT, Well Done.
+;*3$"
+GCC: (Debian 9.2.1-4) 9.2.1 20190821
+...
+----
+
+No obvious password found.
+
+=== Ghidra
+
+Loaded in Ghidra.  
+Noticed many functions (e.g. `c0()` to `c9()`) being used to build the password inside `buildPassword()`.  
+Realized the password was assembled byte-by-byte.  
+
+I considered recreating the logic of all these functions (e.g. writing a python script to simulate them) but decided it would be too tedious.
+Not to mention, I don't want to do this method when it scales up to thousands of functions.
+
+=== GDB + GEF
+
+Opened GDB with GEF and ran the binary.
+
+Started checking each `cX()` return value.
+
+Then, I noted down the return values to manually piece together the password.
+
+In addition, I tried altering the comparison checks:
+
+* Set breakpoints on `cmp` instructions after each `cX()` call.
+* Used: ``set $bl = $al`` to force my input byte to match expected values.
+
+I was able to get these values from the cX() functions:
+
+----
+c3() = 0x3a
+c0() = 0x55
+c1() = 0x36
+c2() = 0x2d
+c4() = 0x59
+c8() = 0x2b
+c5() = 0x4c
+c6() = 0x2e
+c7() = 0x22
+c9() = ??
+----
+
+Which is just ``U6-:YL."+\`` but I missed the function **c9()** and the character for it was ``/``.
+
+=== Running with the correct password
+
+image::Crackme-4/1-password.png["Running with password"]
+
+And that's how I painstakingly got the password...
+
+=== What I should have done
+
+After seeing the disassembly of ``Vault::checkPassword()``:
+
+----
+gef➤  disas /r _ZN5Vault13checkPasswordEv
+Dump of assembler code for function _ZN5Vault13checkPasswordEv:
+   0x0000000000001874 <+0>:	    55                 	push   rbp
+   0x0000000000001875 <+1>:	    48 89 e5           	mov    rbp,rsp
+   0x0000000000001878 <+4>:	    48 83 ec 10        	sub    rsp,0x10
+   0x000000000000187c <+8>:	    48 89 7d f8        	mov    QWORD PTR [rbp-0x8],rdi
+   0x0000000000001880 <+12>:	48 8b 45 f8        	mov    rax,QWORD PTR [rbp-0x8]
+   0x0000000000001884 <+16>:	48 89 c7           	mov    rdi,rax
+   0x0000000000001887 <+19>:	e8 90 fc ff ff     	call   0x151c <_ZN11PasswordGen13buildPasswordEv>
+   0x000000000000188c <+24>:	48 8b 45 f8        	mov    rax,QWORD PTR [rbp-0x8] <.>
+   0x0000000000001890 <+28>:	48 8b 55 f8        	mov    rdx,QWORD PTR [rbp-0x8]
+   0x0000000000001894 <+32>:	48 83 c2 08        	add    rdx,0x8
+   0x0000000000001898 <+36>:	48 89 d6           	mov    rsi,rdx
+   0x000000000000189b <+39>:	48 89 c7           	mov    rdi,rax
+   0x000000000000189e <+42>:	e8 f3 f8 ff ff     	call   0x1196 <_ZN11PasswordGen13checkPasswordEPc>
+   0x00000000000018a3 <+47>:	84 c0              	test   al,al
+   0x00000000000018a5 <+49>:	74 13              	je     0x18ba <_ZN5Vault13checkPasswordEv+70>
+   0x00000000000018a7 <+51>:	48 8d 35 90 07 00 00	lea    rsi,[rip+0x790]        # 0x203e
+   0x00000000000018ae <+58>:	48 8d 3d ab 27 00 00	lea    rdi,[rip+0x27ab]        # 0x4060 <_ZSt4cout@@GLIBCXX_3.4>
+   0x00000000000018b5 <+65>:	e8 b6 f7 ff ff     	call   0x1070 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+   0x00000000000018ba <+70>:	90                 	nop
+   0x00000000000018bb <+71>:	c9                 	leave
+   0x00000000000018bc <+72>:	c3                 	ret
+End of assembler dump.
+----
+<.> Breakpoint here
+
+I could've just set a breakpoint at *_ZN5Vault13checkPasswordEv+24* then inspected the value of ``$rdi``.
+
+I ran gdb again.
+
+----
+gef➤  r
+Starting program: /home/chicken/crackmes/Crackme-4 
+Function(s) ^std::(move|forward|as_const|(__)?addressof) will be skipped when stepping.
+Function(s) ^std::(shared|unique)_ptr<.*>::(get|operator) will be skipped when stepping.
+Function(s) ^std::(basic_string|vector|array|deque|(forward_)?list|(unordered_|flat_)?(multi)?(map|set)|span)<.*>::(c?r?(begin|end)|front|back|data|size|empty) will be skipped when stepping.
+Function(s) ^std::(basic_string|vector|array|deque|span)<.*>::operator.] will be skipped when stepping.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/libthread_db.so.1".
+
+Please enter the password: hello
+----
+
+Entered a random password and gdb will pause at the breakpoint I have set earlier.
+
+image::Crackme-4/2-breakpoint.png["GDB+GEF Breakpoint"]
+
+Then finally print out the password with ``x/s 0x000055555556bad0``:
+
+image::Crackme-4/3-print.png["Print Password"]
+
+Although, there is no need to print it out since the password can already be seen in **$rdi** register.
+
+Okay, maybe I was wrong earlier about needing ``/`` since after the ``+`` symbol is a newline character.
+
+Although for some reason, it still accepted with or without ``/`` as the final character.
