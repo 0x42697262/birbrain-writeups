@@ -9,6 +9,7 @@
 ** xref:crackmes.one:keyg3nme/keyg3nme.adoc[]
 ** xref:crackmes.one:Crack3-by-D4RK_FL0W/Crack3-by-D4RK_FL0W.adoc[]
 ** xref:crackmes.one:Crackme-4/Crackme-4.adoc[]
+** xref:crackmes.one:Crack_5/Crack_5.adoc[]
 
 [HackTheBox]
 * xref:HackTheBox:index.adoc[]

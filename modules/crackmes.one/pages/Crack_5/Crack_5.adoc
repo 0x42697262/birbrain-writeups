@@ -1,0 +1,457 @@
+= Crack_5
+:tip-caption: 💡
+
+Author:: 0x42697262
+Play Date:: 2025/06/14 - 2025/06/14
+
+.https://crackmes.one/crackme/5f0998cb33c5d42a7c667974[D4RKFL0W's Crack_5]
+****
+Author:: D4RKFL0W
+Language:: C/C++
+Upload:: 10:47 AM 07/11/2020
+Platform:: Unix/linux etc.
+Difficulty:: 2.0
+Quality:: 4.0
+Arch:: x86-64
+Description:: Any feedback welcome.
+****
+
+== Steps
+
+=== file
+
+I always start with `file` out of habit:
+
+----
+$ file crack_5
+crack_5: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=1d57b761520e76af90103e540405284c7e8ffeee, for GNU/Linux 3.2.0, not stripped
+----
+
+Confirmed it’s a 64-bit ELF unstripped binary.
+
+=== strings
+
+Ran `strings` to look for hardcoded password:
+
+----
+$ strings Crackme-4
+...
+[]A\A]A^A_
+Sorry, That Is Wrong.
+Please Try Again.
+Password: 
+Correct
+Sorry, That's Wrong...
+;*3$"
+zPLR
+...
+----
+
+No obvious password found.
+
+
+=== Running
+
+I ran the binary but all I got was *terminated by signal SIGSEGV (Address boundary error)*.
+
+Then I wondered if this challenge was meant to patch the binary.
+Or maybe it's something that required arguments.
+
+I tried running with 1 argument, I still got *SIGSEGV*.
+I then try with 2 arguments.
+
+.Running with 2 arguments
+image::Crack_5/1-2args.png["Running with 2 arguments"]
+
+This looked promising.
+So I tried with 3 arguments, then 4, then 5, then so on and on...
+But the result is still the same.
+
+I just need 2 arguments.
+
+=== Disassembler
+
+I opened Ghidra's disassembler only to find out that the **main** function takes **2** parameters.
+
+[,c]
+----
+undefined4 main(undefined8 param_1,long param_2)
+----
+
+Reading through the code, there were only two things that were important.
+
+**First**, is the ``args()`` function that takes two parameters.
+
+[,c]
+----
+is_correct = args(*(char **)(param_2 + 8),*(char **)(param_2 + 16));
+----
+
+**Second**, is the for loops of ``fake_password`` and ``coded_password``.
+
+I noticed that ``fake_password`` was not ever used in anything.
+
+
+[,c]
+----
+for (i = 0; i < 5; i = i + 1) {
+   decrypt((uint *)fake_password,5);
+   decrypt((uint *)coded_password,5);
+}
+for (j = 0; j < 7; j = j + 1) {
+   encrypt((uint *)coded_password,5);
+   decrypt((uint *)fake_password,5);
+   encrypt((uint *)fake_password,5);
+}
+for (k = 0; k < 1; k = k + 1) {
+   decrypt((uint *)fake_password,5);
+   decrypt((uint *)coded_password,5);
+}
+----
+
+NOTE: I have already renamed the labels in Ghidra, but the actual binary string labels are different.
+
+The value of ``is_correct`` must be set to **`**.
+
+.Check condition before executing the rest of the code
+[,c]
+----
+if (is_correct == '\x01') { ... }
+----
+
+Hence, I need to figure out how ``args()`` function work.
+
+=== What is args() function?
+
+.First 8 lines of args()
+[,c]
+----
+undefined8 args(char *param_1,char *param_2)
+{
+  size_t temp;
+  basic_ostream *pbVar1;
+  undefined8 is_correct;
+  basic_string sorry_thats_wrong [39];
+  allocator<char> local_21;
+  int len_arg_2;
+  int len_arg_1;
+...
+----
+
+The first thing I have noticed is that the length of the two parameters were saved and checked.
+
+.Length of the two parameters were checked
+[,c]
+----
+temp = strlen(param_1);
+len_arg_1 = (int)temp;
+temp = strlen(param_2);
+len_arg_2 = (int)temp;
+if (len_arg_1 == 8) {
+   if (len_arg_2 == 8) {
+...
+----
+
+This is the overall conditional branch of the function.
+
+[,c]
+----
+if (len_arg_1 == 8) { <.>
+   if (len_arg_2 == 8) { <.>
+   pbVar1 = std::operator<<((basic_ostream *)std::cout,sorry_thats_wrong);
+   std::operator<<(pbVar1,'\n');
+   is_correct = 0;
+   }
+   else if (param_2[len_arg_2 - 2] == 'X') {
+   if (*param_2 < 'Y') {
+      pbVar1 = std::operator<<((basic_ostream *)std::cout,sorry_thats_wrong);
+      std::operator<<(pbVar1,'\n');
+      is_correct = 0;
+   }
+   else {
+      is_correct = 1;
+   }
+   }
+   else {
+   pbVar1 = std::operator<<((basic_ostream *)std::cout,sorry_thats_wrong);
+   std::operator<<(pbVar1,'\n');
+   is_correct = 0;
+   }
+}
+else {
+                  /* try { // try from 0010181d to 001018cf has its CatchHandler @ 00101906 */
+   pbVar1 = std::operator<<((basic_ostream *)std::cout,sorry_thats_wrong);
+   std::operator<<(pbVar1,'\n');
+   is_correct = 0;
+}
+----
+<.> Returns incorrect if length of your first argument is not 8
+<.> Returns incorrect if length of your first argument is exactly 8
+
+If the length of the first argument where to be 8 characters, the code proceeds to check if the length of the second parameter is not equal to 8 characters.
+
+This means, we need to have our first and second argument of the binary when executed be exactly 8 characters long and not 8 characters long, respectively.
+
+There is another requirement, our second parameter must contain character ``X`` 4th index and the 1st index must be a character value greater than or equal ``Y``.
+
+.Requirements for the 2nd parameter
+[,c]
+----
+if (param_2[len_arg_2 - 2] == 'X') {
+   if (*param_2 < 'Y') {
+      pbVar1 = std::operator<<((basic_ostream *)std::cout,sorry_thats_wrong);
+      std::operator<<(pbVar1,'\n');
+      is_correct = 0;
+   }
+   else {
+      is_correct = 1;
+   }
+...
+}
+----
+
+These requirements are needed to return a value of ``1``.
+
+.Return variable of args()
+[,c]
+----
+return is_correct;
+----
+
+At this point, I now know what I need:
+
+* The first argument of the binary must be **8 characters** long regardless of the characters used.
+* The second argument of teh binary must have these conditions:
+** 1st index must have integer value higher than ``Y``.
+** 4th index must exactly be character **X**.
+
+With this, I came up with a new way to execute the binary: ``./crack_5 12345678 Y00X0``
+
+Well, I can just use ``./crack_5 12341234 YXX``, a shorter version of the 2nd argument.
+
+That is because ``if (param_2[len_arg_2 - 2] == 'X')`` checks if the index of (length - 2) is exactly **X**.
+
+=== Running with the correct parameters
+
+Here, I ran the binary with the correct parameters.
+
+.Running with the correct arguments
+image::Crack_5/2-password.png["Running with the correct arguments"]
+
+Now, I need to get the password.
+
+That should not be a problem because there is a hint.
+
+.Password hint
+[,c]
+----
+copy_string(coded_password,20,copied_password);
+is_password_correct = std::operator!=(password,copied_password);
+----
+
+=== Extracting the encrypted password
+
+``coded_password`` is stored in the **.data** section of the binary.
+
+.Encrypted password bytes
+image::Crack_5/3-encrypted_pw.png["Encrypted password bytes"]
+
+But how do we get the unencrypted password?
+
+The easiest way is to use **GDB**!
+Well, my other method was to decrypt it by rewriting the ``decrypt()`` function...
+Although I had issues with that as it _took me almost 4 hours to realize the size of "pointers" and variables_.
+
+=== GDB
+
+I ran the binary with GDB and added a breakpoint somewhere around ``copy_string`` variable.
+
+----
+gef➤  disas /r main
+...
+0x0000555555555611 <+534>:	48 89 d6           	mov    rsi,rdx
+0x0000555555555614 <+537>:	48 89 c7           	mov    rdi,rax
+0x0000555555555617 <+540>:	e8 a5 03 00 00     	call   0x5555555559c1 <_ZStneIcSt11char_traitsIcESaIcEEbRKNSt7__cxx1112basic_stringIT_T0_T1_EESA_>
+...
+
+gef➤  b *main+537
+Breakpoint 1 at 0x555555555614
+----
+
+I ran the binary with its arguments and was able to find the decrypted string.
+
+
+.Running GDB with arguments
+image::Crack_5/4-unc_pw.png["Running GDB with arguments"]
+
+There we go, found the password.
+
+.Found the unencrypted password
+image::Crack_5/5-found_pw.png["Found the unencrypted password"]
+
+It's ``P0iNT3R_tYPe5_M4tt3r``!
+
+=== Using the correct password
+
+.Testing the password found
+image::Crack_5/6-test.png["Testing the password found"]
+
+And that is all.
+
+== Conclusion
+
+This was a pretty easy challenge if you just used GDB directly like what I did above.
+
+However, that's not going deeper down the rabbit hole of reverse engineering.
+
+As I have mentioned earlier, it took me almost 4 hours to use the alternative solution...
+Why that long?
+You'll see below.
+
+=== Manually decrypting the password
+
+In the **main** funciton, ``decrypt((uint *)coded_password,5);`` was called 5, 7, and 1 times from the three loops.
+
+This is what the **decrypt** function contains.
+
+.decrypt() function
+[,c]
+----
+void decrypt(uint *string,uint count)
+{
+  uint index;
+  
+  for (index = 0; index < count; index = index + 1) {
+    string[(int)index] = index + string[(int)index];
+    string[(int)index] = string[(int)index] + 0x23;
+    string[(int)index] = string[(int)index] ^ 0xdeadbeef;
+  }
+  return;
+}
+----
+
+It takes an input unsigned pointer of an array and an unsigned integer.
+The string is the ``coded_password`` passed by calling the ``decrypt()`` function.
+
+It then tries to loop over the array at the limit of ``count``.
+Which is **5** called by the ``main()`` function.
+
+Wait, why 5 when our ``coded_password`` is 20 characters long?
+
+.coded_password
+----
+0x9c, 0x8e, 0xc4, 0x90, 0x97,
+0x8d, 0xff, 0x81, 0x76, 0xe7,
+0xfd, 0xbb, 0xb4, 0xe1, 0xe0,
+0xea, 0x74, 0xca, 0x9e, 0xac
+----
+
+And it is stored as **1 byte** in an array.
+
+See the image below again for reference.
+
+image::Crack_5/3-encrypted_pw.png["Encrypted password bytes"]
+
+At first, I thought the loop will iterate over the array **1 byte** at a time.
+And been trying to figure out why when the code below is already able to decrypt the password.
+
+[,c]
+----
+for (i = 0; i < 5; i = i + 1) {
+   decrypt((uint *)fake_password,5);
+   decrypt((uint *)coded_password,5);
+}
+----
+
+That's where 3 to 4 hours worth of my time got wasted trying to figure out why the hell it gets decrypted properly.
+At first I thought the memory doesn't get cleared since **decrypt** function was called 5 times so ``index`` must have been running...
+
+Which was wrong.
+My thought process was wrong.
+
+There was already a big hint right in front of me: ***uint***
+
+An **unsigned integer**.
+
+Well, other than that, there's also ``string[(int)index] = index + string[(int)index];``: **(int)index**.
+
+What does this mean?
+Majority of the people would have already seen this as pretty obvious.
+Not for me.
+
+
+=== Solution + Python script
+
+The reason why it works is becuse accessing the index at a given pointer address of an array is by **4 bytes**.
+Ahah!
+
+So, what happens is that 4 bytes were decrypted each time the loop iterates.
+
+.The actual data being decrypted each iteration.
+----
+0x9c8ec490
+0x978dff81
+0x76e7fdbb
+0xb4e1e0ea
+0x74ca9eac
+----
+
+Now that makes sense!
+
+I asked ChatGPT to help me create a Python script to decrypt the password.
+
+[, python]
+----
+def decrypt(data, count):
+    """
+    data: list of 32-bit unsigned integers (uint32)
+    count: number of uint32s to process
+    """
+    for index in range(count):
+        data[index] = (index + data[index]) & 0xFFFFFFFF  # simulate 32-bit overflow
+        data[index] = (data[index] + 0x23) & 0xFFFFFFFF
+        data[index] = (data[index] ^ 0xDEADBEEF) & 0xFFFFFFFF
+
+
+def bytes_to_uint32_list(byte_data):
+    """
+    Convert bytes (len multiple of 4) to list of uint32 values
+    """
+    return [int.from_bytes(byte_data[i:i+4], 'little') for i in range(0, len(byte_data), 4)]
+
+def uint32_list_to_bytes(uint_list):
+    return b''.join(x.to_bytes(4, 'little') for x in uint_list)
+
+coded_password_bytes = bytes([
+    0x9c, 0x8e, 0xc4, 0x90, 0x97, 0x8d, 0xff, 0x81,
+    0x76, 0xe7, 0xfd, 0xbb, 0xb4, 0xe1, 0xe0, 0xea,
+    0x74, 0xca, 0x9e, 0xac
+])
+
+coded_password = bytes_to_uint32_list(coded_password_bytes)
+
+# Process first 5 uint32s
+decrypt(coded_password, 5)
+
+# Show result
+print("Decrypted uint32s:")
+for val in coded_password:
+    print(f"{val:08x}")
+
+# If you want to see it as bytes:
+decrypted_bytes = uint32_list_to_bytes(coded_password)
+print("Decrypted bytes:", decrypted_bytes)
+----
+
+Running the script gave me the needed password of this challenge.
+
+----
+$ python crack_5.py
+Decrypted uint32s:
+4e693050
+5f523354
+65505974
+344d5f35
+72337474
+Decrypted bytes: b'P0iNT3R_tYPe5_M4tt3r'
+----
