@@ -22,4 +22,5 @@ Date,Category,Challenge
 "2025/06/12","Reverse Engineering",   "xref:crackmes.one:Crackme-4/Crackme-4.adoc[Crackme-4]"
 "2025/06/13","Reverse Engineering",   "xref:HackTheBox:rev_spookypass.adoc[SpookyPass]"
 "2025/06/14","Reverse Engineering",   "xref:crackmes.one:Crack_5/Crack_5.adoc[Crack_5]"
+"2025/06/15","Reverse Engineering",   "xref:HackTheBox:rev_tinyplatformer.adoc[TinyPlatformer]"
 |===

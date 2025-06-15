@@ -26,6 +26,7 @@
 **** xref:HackTheBox:cat.adoc[]
 *** Reversing
 **** xref:HackTheBox:rev_spookypass.adoc[]
+**** xref:HackTheBox:rev_tinyplatformer.adoc[]
 ** Capture The Flag
 *** xref:HackTheBox:ctf-cyber-apocalypse.adoc[]
 **** Cyber Apocalypse CTF 2025

@@ -1,0 +1,550 @@
+= TinyPlatformer
+
+Author:: 0x42697262
+Category:: Reversing
+Difficulty:: Easy
+Play Date:: 2025/06/15 - 2025/06/15
+
+== Details
+
+.Challenge Description
+****
+Navigate through Data Center Alpha's exterior defenses and ventilation system. The facility features platforms and elecrified objects. Your character must jump, slide, and time movements carefully to avoid detection while collecting an encryption key that will let you out with the secret. Watch every move!
+****
+
+
+There is only 1 file in this challenge.
+
+----
+$  ls -la
+-rwxr-xr-x 1 chicken chicken 17271136 May 15 14:11 TinyPlatformer*
+----
+
+What to expect?
+
+. A https://github.com/pygame/pygame[pygame] compiled binary through https://github.com/pyinstaller/pyinstaller[PyInstaller]
+. A type of https://en.wikipedia.org/wiki/Constraint_satisfaction_problem[Constraint satisfaction problem]
+
+
+[NOTE]
+====
+Download the challenge here: xref:attachment$rev_tinyplatformer/TinyPlatformer.zip[TinyPlatformer.zip]
+
+Make sure the **SHA-256** hash matches the original in the HackTheBox https://app.hackthebox.com/challenges/TinyPlatformer[challenge website].
+====
+
+== Solution
+
+I always tend to check the file type with ``file`` command.
+It doesnt do much but makes me feel I get a foothold or something.
+
+----
+$ file TinyPlatformer
+TinyPlatformer: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.24, BuildID[sha1]=75f8346ea2dbfaafcc12f6682d4424f06b9a8ddd, stripped
+----
+
+Oh, it's a stripped binary this time.
+Let me see what's inside the strings.
+
+----
+$ strings TinyPlatformer
+...
+bpygame/_freetype.cpython-37m-x86_64-linux-gnu.so
+bpygame/base.cpython-37m-x86_64-linux-gnu.so
+bpygame/bufferproxy.cpython-37m-x86_64-linux-gnu.so
+bpygame/color.cpython-37m-x86_64-linux-gnu.so
+bpygame/constants.cpython-37m-x86_64-linux-gnu.so
+bpygame/display.cpython-37m-x86_64-linux-gnu.so
+bpygame/draw.cpython-37m-x86_64-linux-gnu.so
+bpygame/event.cpython-37m-x86_64-linux-gnu.so
+bpygame/fastevent.cpython-37m-x86_64-linux-gnu.so
+bpygame/font.cpython-37m-x86_64-linux-gnu.so
+bpygame/image.cpython-37m-x86_64-linux-gnu.so
+bpygame/imageext.cpython-37m-x86_64-linux-gnu.so
+bpygame/joystick.cpython-37m-x86_64-linux-gnu.so
+bpygame/key.cpython-37m-x86_64-linux-gnu.so
+bpygame/mask.cpython-37m-x86_64-linux-gnu.so
+bpygame/math.cpython-37m-x86_64-linux-gnu.so
+bpygame/mixer.cpython-37m-x86_64-linux-gnu.so
+bpygame/mixer_music.cpython-37m-x86_64-linux-gnu.so
+bpygame/mouse.cpython-37m-x86_64-linux-gnu.so
+bpygame/pixelarray.cpython-37m-x86_64-linux-gnu.so
+bpygame/pixelcopy.cpython-37m-x86_64-linux-gnu.so
+bpygame/rect.cpython-37m-x86_64-linux-gnu.so
+bpygame/rwobject.cpython-37m-x86_64-linux-gnu.so
+bpygame/scrap.cpython-37m-x86_64-linux-gnu.so
+bpygame/surface.cpython-37m-x86_64-linux-gnu.so
+bpygame/surflock.cpython-37m-x86_64-linux-gnu.so
+bpygame/time.cpython-37m-x86_64-linux-gnu.so
+bpygame/transform.cpython-37m-x86_64-linux-gnu.so
+xFreeSansBold.ttf
+xbase_library.zip
+xpygame/freesansbold.ttf
+xpygame/pygame_icon.bmp
+zPYZ-00.pyz
+...
+----
+
+I noticed there's ``pygame`` indicating this might be a compiled Python game using pygame.
+Although I do not know how tool is being used to compile the code.
+
+There's four possible tools used to package this game:
+
+. PyInstaller
+. cx_Freeze
+. Nuitka
+. py2exe (but this is for windows)
+
+=== Running
+
+But I haven't even opened the game yet.
+So, I ran it and see what it does.
+
+.Playing the game
+image::rev_tinyplatformer/1-play.png[]
+
+It looks like  simple game.
+I thought the controls were **WASD** but it turns out to be arrow keys and the space bar.
+
+7 seconds was plenty of time to complete each level.
+There were 3 levels in total.
+
+.Winning
+image::rev_tinyplatformer/2-win.png[]
+
+Time to close the game since there were no print statements in the console.
+I only saw the word **pygame** and the Python version used.
+
+.Terminal output
+image::rev_tinyplatformer/3-console.png[]
+
+=== Checking for the tool used to package
+
+I need to know how it's being compiled so first I checked for PyInstaller indicators using ``strings`` again.
+
+----
+$ strings TinyPlatformer | grep -i pyi
+Error copying %s
+_pyi_main_co
+_PYI_ONEDIR_MODE
+_PYI_PROCNAME
+Cannot open PyInstaller archive from executable (%s) or external archive (%s)
+PyImport_AddModule
+PyImport_ExecCodeModule
+PyImport_ImportModule
+Cannot dlsym for PyImport_AddModule
+Cannot dlsym for PyImport_ExecCodeModule
+Cannot dlsym for PyImport_ImportModule
+pyi-
+pyi-runtime-tmpdir
+pyi-bootloader-ignore-signals
+LOADER: failed to allocate argv_pyi: %s
+pYI<
+r<pYI
+PyI=
+PYiTb
+PPyiB
+mpyimod01_os_path
+mpyimod02_archive
+mpyimod03_importers
+mpyimod04_ctypes
+spyiboot01_bootstrap
+spyi_rth_subprocess
+spyi_rth_pkgutil
+spyi_rth_inspect
+spyi_rth_pkgres
+----
+
+Those ``pyi-``, ``pyimod``, and ``pyi-runtime`` strings tells me:
+
+* The Python code is embedded in a PyInstaller archive inside that ELF.
+* The code is most likely in **.pyc** (compiled Python) format inside a PYZ archive.
+
+I don't know what tool to decompile **PyInstaller** so I looked it up online and found https://github.com/extremecoders-re/pyinstxtractor[pyinstxtractor].
+
+=== Extracting with pyinstxtractor
+
+After cloning the repository, I ran it and got the extracted python compiled files.
+
+.pyinstxtractor
+----
+$ python pyinstxtractor/pyinstxtractor.py TinyPlatformer
+[+] Processing TinyPlatformer
+[+] Pyinstaller version: 2.1+
+[+] Python version: 3.7
+[+] Length of package: 17223302 bytes
+[+] Found 108 files in CArchive
+[+] Beginning extraction...please standby
+[+] Possible entry point: pyiboot01_bootstrap.pyc
+[+] Possible entry point: pyi_rth_subprocess.pyc
+[+] Possible entry point: pyi_rth_pkgutil.pyc
+[+] Possible entry point: pyi_rth_inspect.pyc
+[+] Possible entry point: pyi_rth_pkgres.pyc
+[+] Possible entry point: main.pyc
+[!] Warning: This script is running in a different Python version than the one used to build the executable.
+[!] Please run this script in Python 3.7 to prevent extraction errors during unmarshalling
+[!] Skipping pyz extraction
+[+] Successfully extracted pyinstaller archive: TinyPlatformer
+
+You can now use a python decompiler on the pyc files within the extracted directory
+----
+
+Cool!
+Here's all the extracted files.
+Although I just need the script.
+
+It's either on ``main.pyc`` or ``struct.pyc``.
+I bet it's on the **main** python script.
+
+.Extracted files
+----
+$ ls -la
+total 38292
+drwxr-xr-x 6 chicken chicken     4096 Jun 15 07:35 ./
+drwxr-xr-x 5 chicken chicken       94 Jun 15 06:30 ../
+-rw-r--r-- 1 chicken chicken   795898 Jun 15 08:39 base_library.zip
+-rw-r--r-- 1 chicken chicken   359272 Jun 15 08:39 FreeSansBold.ttf
+-rw-r--r-- 1 chicken chicken    66784 Jun 15 08:39 libbz2.so.1.0
+-rw-r--r-- 1 chicken chicken  2662388 Jun 15 08:39 libcrypto.so.1.0.0
+drwxr-xr-x 2 chicken chicken     4096 Jun 15 06:22 lib-dynload/
+-rw-r--r-- 1 chicken chicken    30896 Jun 15 08:39 libffi.so.6
+-rw-r--r-- 1 chicken chicken  1741304 Jun 15 08:39 libFLAC-bf6d1292.so.8.3.0
+-rw-r--r-- 1 chicken chicken  3621760 Jun 15 08:39 libfreetype-2d39c124.so.6.17.1
+-rw-r--r-- 1 chicken chicken   142552 Jun 15 08:39 libjpeg-bd53fca1.so.62.0.0
+-rw-r--r-- 1 chicken chicken   308648 Jun 15 08:39 libmikmod-fabcac29.so.2.0.4
+-rw-r--r-- 1 chicken chicken    84064 Jun 15 08:39 libogg-b51fbe74.so.0.8.4
+-rw-r--r-- 1 chicken chicken   959776 Jun 15 08:39 libpng16-b14e7f97.so.16.37.0
+-rw-r--r-- 1 chicken chicken 10581856 Jun 15 08:39 libpython3.7m.so.1.0
+-rw-r--r-- 1 chicken chicken   265456 Jun 15 08:39 libreadline.so.6
+-rw-r--r-- 1 chicken chicken  9249688 Jun 15 08:39 libSDL2-2-d6813302.0.so.0.14.0
+-rw-r--r-- 1 chicken chicken   674808 Jun 15 08:39 libSDL2_image-2-554041b7.0.so.0.2.3
+-rw-r--r-- 1 chicken chicken   589200 Jun 15 08:39 libSDL2_mixer-2-5dc902ba.0.so.0.2.2
+-rw-r--r-- 1 chicken chicken   153552 Jun 15 08:39 libSDL2_ttf-2-dd80ed71.0.so.0.14.1
+-rw-r--r-- 1 chicken chicken   514261 Jun 15 08:39 libssl.so.1.0.0
+-rw-r--r-- 1 chicken chicken   389776 Jun 15 08:39 libtiff-97e44e95.so.3.8.2
+-rw-r--r-- 1 chicken chicken   159200 Jun 15 08:39 libtinfo.so.5
+-rw-r--r-- 1 chicken chicken    18896 Jun 15 08:39 libuuid.so.1
+-rw-r--r-- 1 chicken chicken   240344 Jun 15 08:39 libvorbis-205f0f59.so.0.4.8
+-rw-r--r-- 1 chicken chicken    63136 Jun 15 08:39 libvorbisfile-f207f3a6.so.3.3.7
+-rw-r--r-- 1 chicken chicken  3627752 Jun 15 08:39 libwebp-582c46b3.so.7.1.0
+-rw-r--r-- 1 chicken chicken    87848 Jun 15 08:39 libz-a147dcb0.so.1.2.3
+-rw-r--r-- 1 chicken chicken    92720 Jun 15 08:39 libz.so.1
+-rw-r--r-- 1 chicken chicken     9558 Jun 15 08:39 main.pyc <.>
+drwxr-xr-x 2 chicken chicken       35 Jun 15 07:03 __pycache__/
+drwxr-xr-x 2 chicken chicken     4096 Jun 15 06:22 pygame/
+-rw-r--r-- 1 chicken chicken     1378 Jun 15 08:39 pyiboot01_bootstrap.pyc
+-rw-r--r-- 1 chicken chicken     1700 Jun 15 08:39 pyimod01_os_path.pyc
+-rw-r--r-- 1 chicken chicken     8737 Jun 15 08:39 pyimod02_archive.pyc
+-rw-r--r-- 1 chicken chicken    17760 Jun 15 08:39 pyimod03_importers.pyc
+-rw-r--r-- 1 chicken chicken     3640 Jun 15 08:39 pyimod04_ctypes.pyc
+-rw-r--r-- 1 chicken chicken      676 Jun 15 08:39 pyi_rth_inspect.pyc
+-rw-r--r-- 1 chicken chicken     4179 Jun 15 08:39 pyi_rth_pkgres.pyc
+-rw-r--r-- 1 chicken chicken     1081 Jun 15 08:39 pyi_rth_pkgutil.pyc
+-rw-r--r-- 1 chicken chicken      811 Jun 15 08:39 pyi_rth_subprocess.pyc
+-rw-r--r-- 1 chicken chicken  1556675 Jun 15 08:39 PYZ-00.pyz
+drwxr-xr-x 2 chicken chicken        6 Jun 15 06:22 PYZ-00.pyz_extracted/
+-rw-r--r-- 1 chicken chicken      297 Jun 15 08:39 struct.pyc <.>
+----
+<.> Probably the entire game
+<.> Probably some data (spoiler: there's nothing worth it inside)
+
+Next is I need to figure out how to decompile the compiled python script.
+Quick searches online gave me 3 options:
+
+. https://github.com/rocky/python-decompile3[decompile3]
+. https://github.com/zrax/pycdc[pycdc]
+. https://github.com/rocky/python-uncompyle6[uncompyle6]
+
+I checked **decompile3** first and noticed it was good enough.
+
+I didn't stop there so I checked **pycdc** as well.
+Although I still need to compile it since it's written in C++, so I skipped it.
+
+I checked **uncompyle6** as well, which is written by the same person of **decompile3**, and it turns out **decompile3** is the refactored version of **uncompyle6**.
+I can choose either of the two but went with **uncompyle6** because it's recently been updated compared to months of no updates for **decompile3**.
+
+=== Decompiling with uncompyle6
+
+I ran **uncompyle6** to ``main.pyc``.
+
+----
+$ uncompyle6 main.pyc > main.py
+----
+
+This outputs the source code into a file.
+
+
+=== Reading the source code of main.py
+
+[NOTE]
+====
+The decompiled source code of ``main.py`` can be downloaded xref:attachment$rev_tinyplatformer/main.py[here].
+====
+
+It took me some time, probably an hour, to understand the flow of the code.
+To skip some headaches explaining my experience, the code below is what's needed to grab the flag of this challenge.
+
+.Flag part of the game
+[,python]
+----
+secret_flag = False
+if self.win:
+    ...
+    secrets = [
+      [self.player.secret[i] for i in range(6)]]
+    secrets += [[self.player.secret[i] for i in range(6, 11)]]
+    secrets += [[self.player.secret[i] for i in range(11, len(self.player.secret))]]
+    secrets = [secrets[0][0] > secrets[0][2], secrets[0][1] < secrets[0][4], secrets[0][2] > secrets[0][5], secrets[0][3] > secrets[0][4], secrets[0][5] > secrets[0][3],
+      secrets[1][0] > secrets[1][4], secrets[1][1] < secrets[1][4], secrets[1][2] < secrets[1][3], secrets[1][3] < secrets[1][1],
+      secrets[2][0] > secrets[2][1], secrets[2][2] < secrets[2][1], secrets[2][2] > secrets[2][3]]
+    secret_flag = secret_flag not in secrets
+...
+if secret_flag:
+    key = "".join([str(x) for x in self.player.secret]).encode()
+    ciph = b'}dvIA_\x00FV\x01A^\x01CoG\x03BD\x00]SO'
+    flag = bytes((ciph[i] ^ key[i % len(key)] for i in range(len(ciph)))).decode()
+----
+
+I deleted some parts of the code that's not needed.
+
+The encrypted flag is stored in ``ciph`` variable.
+The key is based from the collected **COLLECTIBLES**'s index encoded as a byte string.
+The flag is stored in ``flag`` variable.
+
+The collectibles are the ones the players collect in the game.
+
+Here's what I found out after reading the source code:
+
+self.player.secret:: A list of integers forming the index of the collected COLLECTIBLES.
+collectibles:: Object the player collects in the game.
+secrets:: A group of lists containing the indexes of collectibles and transforms into a boolean lists.
+secret_flag:: A check if **secrets** are all **True** that satisfies the conditions of secrets.
+
+So, the flow goes like this:
+
+.Diagram Flow of Flag
+[plantuml, format="svg"]
+----
+@startuml
+start
+
+if (self.win?) then (yes)
+  :Split self.player.secret into 3 groups;
+  :Apply constraints;
+  :Evaluate constraints;
+  :Set secret_flag;
+else (no)
+  stop
+endif
+
+if (secret_flag?) then (yes)
+  :Build key from self.player.secret;
+  :XOR ciph with key;
+  :Decode flag;
+else (no)
+  stop
+endif
+
+stop
+@enduml
+----
+
+For each group in the list, there is a corresponding constraint.
+
+.1st Group
+----
+secrets[0][0] > secrets[0][2]
+secrets[0][1] < secrets[0][4]
+secrets[0][2] > secrets[0][5]
+secrets[0][3] > secrets[0][4]
+secrets[0][5] > secrets[0][3]
+----
+
+.2nd Group
+----
+secrets[1][0] > secrets[1][4]
+secrets[1][1] < secrets[1][4]
+secrets[1][2] < secrets[1][3]
+secrets[1][3] < secrets[1][1]
+----
+
+.3rd Group
+----
+secrets[2][0] > secrets[2][1]
+secrets[2][2] < secrets[2][1]
+secrets[2][2] > secrets[2][3]
+----
+
+Once the constraints are applied, ``secrets`` (which is a list of booleans) should all be **True**.
+Otherwise, our decryption key is incorrect.
+
+=== Finding the Secret key
+
+There are two ways to acquire the list of indexes.
+
+First is to modify the source code and add a print statement when the game ends.
+Second is to sort the ``COLLECTIBLES`` based on its Y-coordinate.
+
+I did the first method and was able to get this.
+
+.Secret key (but doesn't decode the ciphertext)
+----
+[0, 4, 5, 1, 3, 2, 0, 3, 1, 2, 4, 3, 0, 2, 1]
+----
+
+[, python]
+----
+COLLECTIBLES = [
+ [ (316, 465), (337, 210), (731, 39), (534, 117), (222, 391), (554, 346) ],
+ [ (380, 415), (417, 252), (570, 138), (197, 316), (358, 65) ],
+ [ (164, 289), (567, 50), (371, 144), (461, 442) ]
+]
+----
+
+**COLLECTIBLES** is just a list of tuples that contains two items, **X** and **Y** coordinates.
+
+.Unsorted COLLECTIBLES
+----
+0 (316, 465)
+1 (337, 210)
+2 (731, 39)
+3 (534, 117)
+4 (222, 391)
+5 (554, 346)
+
+0 (380, 415)
+1 (417, 252) 
+2 (570, 138) 
+3 (197, 316)
+4 (358, 65)
+
+0 (164, 289)
+1 (567, 50)
+2 (371, 144)
+3 (461, 442)
+----
+
+When these are sorted based on its Y-coordinate (the 2nd index), I was able to obtain the following:
+
+.Sorted COLLECTIBLES
+----
+2 (731, 39)
+3 (534, 117)
+1 (337, 210)
+5 (554, 346)
+4 (222, 391)
+0 (316, 465)
+
+4 (358, 65)
+2 (570, 138) 
+1 (417, 252) 
+3 (197, 316)
+0 (380, 415)
+
+1 (567, 50)
+2 (371, 144)
+0 (164, 289)
+3 (461, 442)
+----
+
+But this returns: ``[2, 3, 1, 5, 4, 0, 4, 2, 1, 3, 0, 1, 2, 0, 3]``.
+So it's **wrong**.
+
+Wait, notice that it's reversed for each group.
+Ah, now that makes sense.
+
+That's because of how PyGame works: Y-axis grows downwards.
+
+So, the actual sorted COLLECTIBLES looks like this:
+
+.Correct Sorted COLLECTIBLES
+----
+0 (316, 465)
+4 (222, 391)
+5 (554, 346)
+1 (337, 210)
+3 (534, 117)
+2 (731, 39)
+
+0 (380, 415)
+3 (197, 316)
+1 (417, 252) 
+2 (570, 138) 
+4 (358, 65)
+
+3 (461, 442)
+0 (164, 289)
+2 (371, 144)
+1 (567, 50)
+----
+
+=== Finding the correct order of the key
+
+Now, I should be able to decrypt the ciphertext to obtain the flag!
+
+Except all I got is ``MPCxrm0ug3um1q^w7wu3oc|`` which is very far from HackTheBox's flag format.
+
+Well, that's because I forced my way to decrypt the ciphertext even though the order was incorrect.
+
+When the constraints was applied, ``secrets`` contained at least one value of **False**.
+
+Using the given key results to this check:
+
+.Key: [0, 4, 5, 1, 3, 2, 0, 3, 1, 2, 4, 3, 0, 2, 1]
+----
+[False, False, True, False, True, False, True, True, True, True, False, True]
+----
+
+I didn't want to manually find the constraints so I asked ChatGPT to solve it for me.
+#In hindsight, I should've used Microsft Z3, a SAT solver.#
+
+Anyways, I got the key.
+
+.Correct key order
+----
+[5, 0, 4, 2, 1, 3, 4, 2, 0, 1, 3, 3, 2, 1, 0]
+----
+
+Which resulted everything into **True**!
+
+=== Obtaining the Flag
+
+I made a snippet of code from the game and only taking the code that's involved in obtaining the flag.
+
+.Code to decrypt the flag
+[,python]
+----
+secret_flag = False
+secret = [5, 0, 4, 2, 1, 3, 4, 2, 0, 1, 3, 3, 2, 1, 0]
+secrets = [[secret[i] for i in range(6)]]
+secrets += [[secret[i] for i in range(6, 11)]]
+secrets += [[secret[i] for i in range(11, len(secret))]]
+secrets = [
+    secrets[0][0] > secrets[0][2], secrets[0][1] < secrets[0][4], secrets[0][2] > secrets[0][5], secrets[0][3] > secrets[0][4], secrets[0][5] > secrets[0][3],
+    secrets[1][0] > secrets[1][4], secrets[1][1] < secrets[1][4], secrets[1][2] < secrets[1][3], secrets[1][3] < secrets[1][1],
+    secrets[2][0] > secrets[2][1], secrets[2][2] < secrets[2][1], secrets[2][2] > secrets[2][3]
+]
+secret_flag = secret_flag not in secrets
+key = "".join([str(x) for x in secret]).encode()
+ciph = b'}dvIA_\x00FV\x01A^\x01CoG\x03BD\x00]SO'
+flag = bytes((ciph[i] ^ key[i % len(key)] for i in range(len(ciph)))).decode()
+print(flag)
+----
+
+.TinyPlatformer has been Pwned!
+image::rev_tinyplatformer/4-congrats.png[]
+
+**Challenge complete.**
+
+
+== Conclusion
+
+This is a pretty nice challenged.
+I thought I would have a harder time figuring out how to grab the flag.
+Thought that I'd need to keep playing the game or have to spam print statements everywhere.
+
+Turns out, I just need to properly understand the code.
+And that's how I captured this challenge.
+
+Although, I should've thought of using https://github.com/Z3Prover/z3[Z3 Theorem Prover] from Microsoft Research.
+Oh well, let's just say it's a good experience and at least now know what to use next time.
