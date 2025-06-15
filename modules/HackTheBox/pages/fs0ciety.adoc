@@ -1,0 +1,155 @@
+= fs0ciety
+
+Author:: 0x42697262
+Category:: Misc
+Difficulty:: Easy
+Play Date:: 2025/06/15 - 2025/06/15
+
+== Details
+
+.Challenge Description
+****
+We believe that there is an SSH Password inside password protected 'ZIP' folder. Can you crack the 'ZIP' folder and get the SSH password?
+****
+
+
+There is only 1 file in this challenge.
+
+----
+$  ls -la
+-rw-r--r-- 1 chicken chicken 394 Aug 23  2017 fsociety.zip
+----
+
+What to expect?
+
+. A password protected archive that can be cracked using a common dictionary
+. Once unpacked, it contains the flag
+
+
+[NOTE]
+====
+Download the challenge here: xref:attachment$fs0ciety/fs0ciety.zip[fs0ciety.zip]
+
+Make sure the **SHA-256** hash matches the original in the HackTheBox https://app.hackthebox.com/challenges/fs0ciety[challenge website].
+====
+
+== Solution
+
+I always tend to check the file type with ``file`` command even though it is not necessary here.
+
+----
+$ file fsociety.zip
+fsociety.zip: Zip archive data, made by v3.1, extract using at least v2.0, last modified, last modified Sun, Aug 15 2017 17:44:56, uncompressed size 729, method=deflate
+----
+
+As expected, there is nothing much.
+
+----
+$ strings fsociety.zip
+sshcreds_datacenter.txt
+0r!"5
+F]MN
+*0iA
+;zYN
+sshcreds_datacenter.txt
+----
+
+This file is very small so that means the password must be small as well.
+
+Although I need more hints to where the password is stored, but at this point I am already considering bruteforcing the archive password.
+
+=== Gathering for possible string passwords
+
+----
+$ exiftool fsociety.zip
+ExifTool Version Number         : 13.30
+File Name                       : fsociety.zip
+Directory                       : .
+File Size                       : 394 bytes
+File Modification Date/Time     : 2017:08:23 20:11:44+00:00
+File Access Date/Time           : 2025:06:15 12:14:07+00:00
+File Inode Change Date/Time     : 2025:06:15 12:14:00+00:00
+File Permissions                : -rw-r--r--
+File Type                       : ZIP
+File Type Extension             : zip
+MIME Type                       : application/zip
+Zip Required Version            : 20
+Zip Bit Flag                    : 0x0009
+Zip Compression                 : Deflated
+Zip Modify Date                 : 2017:08:15 17:44:56
+Zip CRC                         : 0xe126a116
+Zip Compressed Size             : 198
+Zip Uncompressed Size           : 729
+Zip File Name                   : sshcreds_datacenter.txt
+Warning                         : Stream mode data encountered, file list may be incomplete
+----
+
+None here as well.
+
+I tried https://github.com/ReFirmLabs/binwalk[binwalk] but nothing came.
+
+Alright, bruteforce it is.
+
+=== Bruteforcing with fcrackzip
+
+Now, I have no idea what tool to use but after some quick search online, I found https://oldhome.schmorp.de/marc/fcrackzip.html[fcrackzip].
+
+I then fired it up and was able to retrieve the password.
+
+.Cracking with fcrackzip
+----
+$ fcrackzip --verbose --use-unzip --dictionary --init-password ~/rockyou.txt  fsociety.zip
+found file 'sshcreds_datacenter.txt', (size cp/uc    198/   729, flags 9, chk 8d9c)
+
+
+PASSWORD FOUND!!!!: pw == justdoit
+----
+
+The password is ``justdoit``.
+
+=== Decoding the Flag
+
+I then extracted the password-protected archive and got 1 file from it.
+
+.Extracting with the password
+----
+$ unzip fsociety.zip
+Archive:  fsociety.zip
+[fsociety.zip] sshcreds_datacenter.txt password: 
+  inflating: sshcreds_datacenter.txt  
+----
+
+Apparently, the content of the file is encoded in **base64**.
+
+.sshcreds_datacenter.txt
+----
+$ cat sshcreds_datacenter.txt
+*****************************************************************************************
+Encrypted SSH credentials to access Blume ctOS : 
+
+MDExMDEwMDEgMDExMDAxMTAgMDEwMTExMTEgMDExMTEwMDEgMDAxMTAwMDAgMDExMTAxMDEgMDEwMTExMTEgMDExMDAwMTEgMDEwMDAwMDAgMDExMDExMTAgMDEwMTExMTEgMDAxMDAxMDAgMDExMDExMDEgMDAxMTAwMTEgMDExMDExMDAgMDExMDExMDAgMDEwMTExMTEgMDExMTAxMTEgMDExMDEwMDAgMDEwMDAwMDAgMDExMTAxMDAgMDEwMTExMTEgMDExMTAxMDAgMDExMDEwMDAgMDAxMTAwMTEgMDEwMTExMTEgMDExMTAwMTAgMDAxMTAwMDAgMDExMDAwMTEgMDExMDEwMTEgMDEwMTExMTEgMDExMDEwMDEgMDExMTAwMTEgMDEwMTExMTEgMDExMDAwMTEgMDAxMTAwMDAgMDAxMTAwMDAgMDExMDEwMTEgMDExMDEwMDEgMDExMDExMTAgMDExMDAxMTE=
+
+*****************************************************************************************
+----
+
+I decoded the string and found the flag to be encoded in binary format.
+
+.Flag in binary form
+----
+$ echo MDExMDEwMDEgMDExMDAxMTAgMDEwMTExMTEgMDExMTEwMDEgMDAxMTAwMDAgMDExMTAxMDEgMDEwMTExMTEgMDExMDAwMTEgMDEwMDAwMDAgMDExMDExMTAgMDEwMTExMTEgMDAxMDAxMDAgMDExMDExMDEgMDAxMTAwMTEgMDExMDExMDAgMDExMDExMDAgMDEwMTExMTEgMDExMTAxMTEgMDExMDEwMDAgMDEwMDAwMDAgMDExMTAxMDAgMDEwMTExMTEgMDExMTAxMDAgMDExMDEwMDAgMDAxMTAwMTEgMDEwMTExMTEgMDExMTAwMTAgMDAxMTAwMDAgMDExMDAwMTEgMDExMDEwMTEgMDEwMTExMTEgMDExMDEwMDEgMDExMTAwMTEgMDEwMTExMTEgMDExMDAwMTEgMDAxMTAwMDAgMDAxMTAwMDAgMDExMDEwMTEgMDExMDEwMDEgMDExMDExMTAgMDExMDAxMTE= | base64 -d
+01101001 01100110 01011111 01111001 00110000 01110101 01011111 01100011 01000000 01101110 01011111 00100100 01101101 00110011 01101100 01101100 01011111 01110111 01101000 01000000 01110100 01011111 01110100 01101000 00110011 01011111 01110010 00110000 01100011 01101011 01011111 01101001 01110011 01011111 01100011 00110000 00110000 01101011 01101001 01101110 01100111
+----
+
+Using a tool to convert this back to plaintext will show us the flag.
+
+I'll just use https://gchq.github.io/CyberChef[CyberChef] for it.
+
+.Found the Flag
+image::fs0ciety/1-flag.png[]
+
+**Challenge solved.**
+
+== Conclusion
+
+This challenge is aimed towards people that are new to Capture The Flags.
+I'd say this is a nice introduction.

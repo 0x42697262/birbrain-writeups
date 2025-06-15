@@ -22,6 +22,8 @@
 ** Challenges
 *** Hardware
 **** xref:HackTheBox:photon_lockdown.adoc[]
+*** Misc
+**** xref:HackTheBox:fs0ciety.adoc[]
 *** Mobile
 **** xref:HackTheBox:cat.adoc[]
 *** Reversing
