@@ -1,0 +1,6 @@
+= TryHackMe
+
+Website: https://tryhackme.com/[]
+
+This is supposed to be a beginner friendly CTF compared to xref:HackTheBox:index.adoc[].
+Let's see it try?

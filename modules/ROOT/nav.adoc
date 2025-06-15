@@ -17,8 +17,8 @@
 *** Linux
 **** xref:HackTheBox:bizness.adoc[]
 **** xref:HackTheBox:perfection.adoc[]
-*** Windows
-**** xref:HackTheBox:cicada.adoc[]
+// *** Windows
+// **** xref:HackTheBox:cicada.adoc[]
 ** Challenges
 *** Hardware
 **** xref:HackTheBox:photon_lockdown.adoc[]
@@ -44,6 +44,7 @@
 
 [TryHackMe]
 * xref:TryHackMe:index.adoc[]
+** xref:TryHackMe:blue.adoc[]
 
 [random]
 * xref:random:index.adoc[]

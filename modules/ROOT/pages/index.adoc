@@ -9,6 +9,7 @@ Date,Category,Challenge
 "2023/11/20","Forensics",             "xref:Root-Me:telnet_authentication.adoc[TELNET - authentication]"
 "2023/11/21","Forensics",             "xref:Root-Me:twitter_authentication.adoc[Twitter authentication]"
 "2023/11/23","Forensics",             "xref:Root-Me:ftp_authentication.adoc[FTP - authentication]"
+"2024/03/26","Pwning",                "xref:TryHackMe:blue.adoc[Blue]"
 "2024/05/09","Forensics",             "xref:HackTheBox:photon_lockdown.adoc[Photon Lockdown]"
 "2024/05/19","Forensics",             "xref:HackTheBox:cat.adoc[Cat]"
 "2024/05/19","Pwning",                "xref:HackTheBox:bizness.adoc[Bizness]"
