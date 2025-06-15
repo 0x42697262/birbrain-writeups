@@ -23,6 +23,7 @@
 *** Hardware
 **** xref:HackTheBox:photon_lockdown.adoc[]
 *** Misc
+**** xref:HackTheBox:0ld_is_g0ld.adoc[]
 **** xref:HackTheBox:fs0ciety.adoc[]
 *** Mobile
 **** xref:HackTheBox:cat.adoc[]

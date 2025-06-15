@@ -1,0 +1,146 @@
+= 0ld is g0ld
+
+Author:: 0x42697262
+Category:: Misc
+Difficulty:: Easy
+Play Date:: 2025/06/15 - 2025/06/15
+
+== Details
+
+.Challenge Description
+****
+Old algorithms are not a waste, but are really precious...
+****
+
+
+There is only 1 file in this challenge.
+
+----
+$  ls -la
+-rw-r--r-- 1 chicken chicken 197946 Sep 13  2017 '0ld is g0ld.pdf'
+----
+
+What to expect?
+
+. A password protected PDF
+. Press **F** to pay respect
+
+[NOTE]
+====
+Download the challenge here: xref:attachment$0ld_is_g0ld/0ld_is_g0ld.zip[0ld_is_g0ld.zip]
+
+Make sure the **SHA-256** hash matches the original in the HackTheBox https://app.hackthebox.com/challenges/31[challenge website].
+====
+
+== Solution
+
+I always tend to check the file type with ``file`` command even though it is not necessary here.
+
+----
+$ file 0ld_is_g0ld.zip
+0ld is g0ld.pdf: PDF document, version 1.6, 1 page(s) (zip deflate encoded)
+----
+
+It's a PDF file and there's a "zip" word in it... could it be an archive?
+I'll try using ``strings``.
+
+=== Gathering for possible string passwords
+
+Okay, nevermind that.
+It's mostly gibberish.
+
+What about ``exiftool``?
+
+----
+$ exiftool '0ld is g0ld.pdf'
+ExifTool Version Number         : 13.30
+File Name                       : 0ld is g0ld.pdf
+Directory                       : .
+File Size                       : 198 kB
+File Modification Date/Time     : 2017:09:13 02:18:32+00:00
+File Access Date/Time           : 2025:06:15 14:43:31+00:00
+File Inode Change Date/Time     : 2025:06:15 14:42:49+00:00
+File Permissions                : -rw-r--r--
+File Type                       : PDF
+File Type Extension             : pdf
+MIME Type                       : application/pdf
+PDF Version                     : 1.6
+Linearized                      : No
+Encryption                      : Standard V4.4 (128-bit)
+User Access                     : Print, Modify, Copy, Fill forms, Extract, Print high-res
+Warning                         : Document is password protected (use Password option)
+----
+
+Nothing.
+Seems like I need to bruteforce the password.
+
+=== Cracking the password
+
+I tried https://github.com/ReFirmLabs/binwalk[binwalk] but I didn't see any binary.
+
+I need a tool to bruteforce this PDF.
+Some quick search online gave me https://github.com/mufeedvh/pdfrip[pdfrip].
+
+Quite time consuming to compile in Rust though.
+
+Alright, I was able to make it work.
+
+----
+$ pdfrip -n 12 -f '0ld is g0ld.pdf' wordlist ~/rockyou.txt
+----
+
+But this takes so much time.
+
+.pdfrip takes too much time to crack
+image::0ld_is_g0ld/1-pdfrip.png[]
+
+So, I moved to using ``pdf2john`` and ``john``.
+
+.Extract password hash from PDF
+----
+$ pdf2john '0ld is g0ld.pdf' > pdf.hash
+----
+
+.Crack with john
+----
+$ john pdf.hash --wordlist=~/rockyou.txt
+----
+
+.Show cracked password
+----
+$ john --show pdf.hash
+----
+
+.Cracking with john
+image::0ld_is_g0ld/2-john.png[]
+
+Ah, the password is ``jumanji69``.
+
+=== Finding the Flag
+
+Time to open the PDF document.
+
+.Samuel Morse
+image::0ld_is_g0ld/3-samuel.png[]
+
+I do not know this guy.
+Also where is the flag?
+
+Ah, it's at the very bottom of the document.
+
+.Morse Code (flag)
+----
+.-. .---- .--. ... .- -- ..- ...-- .-.. -- ----- .-. ... ...--
+----
+
+Converting this to plaintext from morse code gave me the flag.
+
+
+.Flag
+image::0ld_is_g0ld/4-flag.png[]
+
+**Challenge solved.**
+
+== Conclusion
+
+I learned a new tool in cracking PDFs that is quicker... Turns out it's still ``john`` (the ripper jumbo).
