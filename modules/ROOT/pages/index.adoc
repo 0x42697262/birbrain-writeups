@@ -6,9 +6,9 @@ Welcome, this is where I store my writeups for various challenges such as Wargam
 [%header, format=csv]
 |===
 Date,Category,Challenge
-"2023/11/20","Forensics",             "xref:Root-Me:telnet_authentication.adoc[TELNET - authentication]"
-"2023/11/21","Forensics",             "xref:Root-Me:twitter_authentication.adoc[Twitter authentication]"
-"2023/11/23","Forensics",             "xref:Root-Me:ftp_authentication.adoc[FTP - authentication]"
+"2023/11/20","Network",               "xref:Root-Me:telnet_authentication.adoc[TELNET - authentication]"
+"2023/11/21","Network",               "xref:Root-Me:twitter_authentication.adoc[Twitter authentication]"
+"2023/11/23","Network",               "xref:Root-Me:ftp_authentication.adoc[FTP - authentication]"
 "2024/03/26","Pwning",                "xref:TryHackMe:blue.adoc[Blue]"
 "2024/05/09","Forensics",             "xref:HackTheBox:photon_lockdown.adoc[Photon Lockdown]"
 "2024/05/19","Forensics",             "xref:HackTheBox:cat.adoc[Cat]"
@@ -23,6 +23,6 @@ Date,Category,Challenge
 "2025/06/13","Reverse Engineering",   "xref:HackTheBox:rev_spookypass.adoc[SpookyPass]"
 "2025/06/14","Reverse Engineering",   "xref:crackmes.one:Crack_5/Crack_5.adoc[Crack_5]"
 "2025/06/15","Reverse Engineering",   "xref:HackTheBox:rev_tinyplatformer.adoc[TinyPlatformer]"
-"2025/06/15","Forensics",             "xref:HackTheBox:fs0ciety.adoc[fs0ciety]"
-"2025/06/15","Forensics",             "xref:HackTheBox:0ld_is_g0ld.adoc[0ld is g0ld]"
+"2025/06/15","Miscellaneous",         "xref:HackTheBox:fs0ciety.adoc[fs0ciety]"
+"2025/06/15","Miscellaneous",         "xref:HackTheBox:0ld_is_g0ld.adoc[0ld is g0ld]"
 |===
