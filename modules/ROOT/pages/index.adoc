@@ -25,4 +25,5 @@ Date,Category,Challenge
 "2025/06/15","Reverse Engineering",   "xref:HackTheBox:rev_tinyplatformer.adoc[TinyPlatformer]"
 "2025/06/15","Miscellaneous",         "xref:HackTheBox:fs0ciety.adoc[fs0ciety]"
 "2025/06/15","Miscellaneous",         "xref:HackTheBox:0ld_is_g0ld.adoc[0ld is g0ld]"
+"2025/06/16","Reverse Engineering",   "xref:crackmes.one:d4rkfl0w-keypad.adoc[Keypad]"
 |===

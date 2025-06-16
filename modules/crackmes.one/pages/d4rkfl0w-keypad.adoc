@@ -1,0 +1,163 @@
+= Keypad
+:tip-caption: 💡
+
+Author:: 0x42697262
+Play Date:: 2025/06/16 - 2025/06/16
+
+== Details
+
+.https://crackmes.one/crackme/60e7572433c5d42814fb31b7[D4RKFL0W's Keypad]
+****
+Author:: D4RKFL0W
+Language:: C/C++
+Upload::  7:51 PM 07/08/2021
+Platform:: Unix/linux etc.
+Difficulty:: 4.0
+Quality:: 4.0
+Arch:: x86-64
+Description:: Gave a GUI crackme a go, let me know what you think. :)
+****
+
+What to expect?
+
+. A stripped GUI binary
+. A type of https://en.wikipedia.org/wiki/Constraint_satisfaction_problem[Constraint satisfaction problem]
+. No Anti-Debugging
+
+== Steps
+
+=== file
+
+I always start with `file` out of habit:
+
+----
+$ file keypad 
+keypad: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=cbb1c416b7663436b715621f209e58ac8b02f042, for GNU/Linux 3.2.0, stripped
+----
+
+A stripped binary this time.
+
+=== strings
+
+Ran `strings` to look for hardcoded password:
+
+----
+$ strings keypad
+...
+[]A\A]A^A_
+clicked
+Delete
+Confirm
+KEYPAD
+destroy
+Well Done
+That's Unfortunate...
+;*3$"
+...
+----
+
+Looks empty.
+
+
+=== Running
+
+Since this is my first GUI app, I'll try running to see what it does.
+
+.Running the GUI
+image::d4rkfl0w-keypad/1-running.png[]
+
+Oh, it's a vault.
+I thought it's a calculator.
+
+Looks like putting the correct PIN sequence is the goal.
+
+=== Figuring out the decompiled code
+
+I tried reverse engineering with https://github.com/radareorg/radare2[radare2] but it was quite confusing and it crashed when i tried ``pdg`` (second time).
+So I went back to Ghidra :)
+
+I kind like radare's decompiling but I don't quite understand assembly yet.
+
+Since the binary is stripped from its labels, I didn't find the main function easily.
+Went ahead and looked for the entry point and started from there.
+
+Then I found the main function.
+
+.main() function
+image::d4rkfl0w-keypad/2-main.png[]
+
+There was a lot to uncover.
+I had to figure out which variables and functions that are related to graphics.
+I had to ignore them.
+
+After some reading and renaming the variables and functions, I noticed that each button corresponds to an action.
+
+.Button actions
+image::d4rkfl0w-keypad/3-actions.png[]
+
+Each function contains an algorithm to manipulate the ``PIN``.
+
+Such as **Button 4**:
+
+.Button 4 PIN Manipulation Algorithm
+image::d4rkfl0w-keypad/4-btn4.png[]
+
+Each button action has different PIN calculation.
+
+This makes me wonder where the PIN is used for.
+Although one could already guess it's for successfully reverse engineering the binary.
+
+There is a **Confirm** button and as expected it also contains a function that verifies the PIN:
+
+.Verify PIN
+image::d4rkfl0w-keypad/5-verify.png[]
+
+The PIN value of the vault is ``0x1746e``.
+
+_But where did the **PIN** come from?_
+
+..data PIN
+image::d4rkfl0w-keypad/6-pin.png[]
+
+It's located (probably?) in the **.data** section of the binary as **8 bytes** uninitialized.
+
+It's accessed by the functions of each numerical buttons (and a function that randomizes the value of the pin but never gets called).
+
+
+=== Bruteforcing the PIN
+
+At first, I thought I could use Z3 Theorem Prover but I had issues with it that signed values does not wrap-around.
+It's a Python quirk and I never figured out how to implement wrapping around the maximum bytes.
+
+Thus, I wrote this xref:attachment$d4rkfl0w-keypad/bruteforce.c[code] in C that will bruteforce the PIN.
+
+Then I ran the code after compiling it.
+
+
+.Cracked the PIN within a second
+image::d4rkfl0w-keypad/7-cracked.png[]
+
+Hooray!
+I found the PIN!
+
+Time to test it.
+
+=== Checking the PIN
+
+Ran the GUI application again and voila!
+
+.Well Done
+image::d4rkfl0w-keypad/8-win.png[]
+
+**Challenge complete.**
+
+== Conclusion
+
+This challenge would have only taken me at most 3 hours if not for the wrap-around issues.
+Because in C/C++, when a variable exceeds the maximum data it holds, it goes all the way back to **0**.
+
+If I had a **4-byte** integer with the value of **0xFFFFFE**, adding **0x12** will result it to **0x00000010**.
+
+This does not happen in Python.
+Nor I could figure out how to implement this in Z3.
+[.line-through]#Although the wrap-around worked sometime that I probably didn't notice, there's also an issue with modulo arithmetic and I decided to not deal with it. Also bruteforcing was almost in an instant so there's that.# 
